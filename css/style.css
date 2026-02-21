@@ -1,0 +1,126 @@
+/* ===== 全体 ===== */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f9f9f9;
+}
+
+/* コンテンツ */
+.container {
+    padding: 15px;
+    padding-bottom: 130px;
+}
+
+/* タイトル */
+h1 {
+    text-align: center;
+    font-size: 1.6em;
+    margin-bottom: 15px;
+}
+
+/* ===== 問題文（左詰め） ===== */
+#question {
+    font-size: 1.4em;
+    min-height: 100px;
+    margin: 20px 0;
+    line-height: 1.6;
+    text-align: left;   /* ← 左詰め */
+    word-break: break-word;
+}
+
+/* ===== 解答（右詰め＆強調） ===== */
+#answerText {
+    font-size: 1.6em;
+    font-weight: bold;
+    text-align: right;  /* ← 右詰め */
+    color: #e91e63;
+    margin-top: 10px;
+}
+
+/* ===== 共通ボタン ===== */
+button {
+    padding: 16px;
+    font-size: 1.2em;
+    border-radius: 14px;
+    border: none;
+}
+
+/* 小さめボタン（問題集読み込み） */
+.smallBtn {
+    padding: 10px 16px;
+    font-size: 0.9em;
+    background: #2196F3;
+    color: white;
+}
+
+/* 解答表示ボタン */
+.subBtn {
+    background: #777;
+    color: white;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* ===== 正解・不正解（小さく横並び） ===== */
+#judgeButtons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.judgeBtn {
+    width: 48%;
+    padding: 10px;
+    font-size: 1em;
+}
+
+.correctBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.incorrectBtn {
+    background-color: #f44336;
+    color: white;
+}
+
+/* ===== 早押しボタン ===== */
+#buzzBtn {
+    background-color: orange;
+    color: white;
+    font-weight: bold;
+}
+
+/* 無効化表示 */
+button:disabled {
+    opacity: 0.4;
+    background-color: #ccc !important;
+    color: #666 !important;
+}
+
+/* ===== 下部固定パネル ===== */
+#controlPanel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    padding: 10px;
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-around;
+}
+
+#controlPanel button {
+    width: 45%;
+    font-size: 1.2em;
+}
+
+/* カウント */
+#countdown {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #ff5722;
+    margin-top: 10px;
+    text-align: center;
+}
