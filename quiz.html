@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>早押しクイズ（スマホ対応）</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+<h1>早押しクイズ</h1>
+
+<h2 id="question">問題集を読み込んでください</h2>
+
+<button id="loadBtn" class="smallBtn">問題集読み込み</button>
+<input type="file" id="fileInput" accept=".csv" style="display:none;">
+
+<div id="answerSection" style="display:none;">
+    <p id="answerText"></p>
+    <button id="showAnswerBtn" class="subBtn">解答を表示</button>
+    <p id="countdown"></p>
+</div>
+
+<div id="judgeButtons" style="display:none;">
+    <button id="correctBtn" class="judgeBtn correctBtn">正解</button>
+    <button id="incorrectBtn" class="judgeBtn incorrectBtn">不正解</button>
+</div>
+
+</div>
+
+<div id="controlPanel">
+    <button id="nextBtn" disabled>次の問題</button>
+    <button id="buzzBtn" disabled>早押し！</button>
+</div>
+
+<script src="js/script.js"></script>
+
+</body>
+</html>
