@@ -32,6 +32,8 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
         if (questions.length > 0) {
             document.getElementById("nextBtn").disabled = false;
             document.getElementById("buzzBtn").disabled = false;
+
+            showQuestion();
         }
     };
     reader.readAsText(file, "UTF-8");
@@ -81,6 +83,11 @@ function showQuestion() {
         displayInterval = setInterval(() => {
             if (charIndex >= currentQuestionFull.length) {
                 clearInterval(displayInterval);
+
+                // ★ここを追加
+        document.getElementById("answerSection").style.display = "block";
+        startCountdown();
+        
                 return;
             }
             document.getElementById("question").innerText += currentQuestionFull[charIndex];
@@ -97,6 +104,10 @@ function buzz() {
 
     document.getElementById("answerSection").style.display = "block";
 
+    startCountdown();  // ←これだけにする
+}
+
+function startCountdown() {
     countdownValue = 5;
     isCounting = true;
     document.getElementById("countdown").innerText = countdownValue + "秒";
