@@ -8,21 +8,18 @@
 </head>
 <body>
 
+<header>
+    <h1>問題検索</h1>
+    <button onclick="location.href='index.html'" class="smallBtn">クイズへ戻る</button>
+</header>
+
 <div class="container">
+    <input type="text" id="searchInput" placeholder="キーワード検索" style="width:100%; padding:10px; font-size:1em; box-sizing: border-box;">
+    <button id="loadBtn" class="smallBtn" style="margin-top: 10px;">問題集読み込み</button>
+    <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-top: 5px;"></div>
+    <input type="file" id="fileInput" accept=".csv" style="display:none;">
 
-<h1>問題検索</h1>
-
-<button onclick="location.href='index.html'" class="smallBtn">
-クイズへ戻る
-</button>
-
-<input type="text" id="searchInput" placeholder="キーワード検索" style="width:100%; padding:10px; font-size:1em;">
-<button id="loadBtn" class="smallBtn">問題集読み込み</button>
-<div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-top: 5px;"></div>
-<input type="file" id="fileInput" accept=".csv" style="display:none;">
-
-<ul id="resultList" style="margin-top:20px;"></ul>
-
+    <ul id="resultList" style="margin-top:20px; padding: 0; list-style: none;"></ul>
 </div>
 
 <script>
@@ -36,7 +33,6 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // ★ ここで画面にファイル名を表示する
     document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
 
     const reader = new FileReader();
@@ -44,10 +40,9 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
         const lines = e.target.result.trim().split("\n");
         questions = lines.map(line => {
             const parts = line.split(",");
-            // カンマが複数ある場合を考慮して修正
-            const question = parts[0];
-            const answer = parts.slice(1).join(",");
-            return { question: question, answer: answer };
+            const q = parts[0];
+            const a = parts.slice(1).join(",");
+            return { question: q, answer: a };
         });
     };
     reader.readAsText(file, "UTF-8");
@@ -64,6 +59,10 @@ document.getElementById("searchInput").addEventListener("input", function() {
         const li = document.createElement("li");
         li.innerHTML = `<strong>${q.question}</strong><br>答え: ${q.answer}`;
         li.style.marginBottom = "15px";
+        li.style.padding = "10px";
+        li.style.background = "#fff";
+        li.style.borderRadius = "8px";
+        li.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
         list.appendChild(li);
     });
 });

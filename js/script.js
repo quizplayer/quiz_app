@@ -8,7 +8,6 @@ let countdownInterval = null;
 let countdownValue = 5;
 let isCounting = false;
 
-// シャッフル
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -16,7 +15,6 @@ function shuffleArray(array) {
     }
 }
 
-// CSV読み込み
 document.getElementById("loadBtn").addEventListener("click", () => {
     document.getElementById("fileInput").click();
 });
@@ -25,8 +23,7 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // ★ 追加：ファイル名を表示する
-    document.getElementById("fileNameDisplay").innerText = "読み込み中: " + file.name;
+    document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -35,10 +32,6 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
         if (questions.length > 0) {
             document.getElementById("nextBtn").disabled = false;
             document.getElementById("buzzBtn").disabled = false;
-
-            // ★ 追加：読み込み完了後に表示を更新
-            document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
-
             showQuestion();
         }
     };
@@ -49,12 +42,13 @@ function parseCSV(text) {
     const lines = text.trim().split("\n");
     questions = lines.map(line => {
         const parts = line.split(",");
-        return { question: parts[0], answer: parts[1] };
+        const q = parts[0];
+        const a = parts.slice(1).join(",");
+        return { question: q, answer: a };
     });
     currentIndex = 0;
 }
 
-// 問題表示処理
 function showQuestion() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
@@ -65,11 +59,11 @@ function showQuestion() {
     document.getElementById("answerSection").style.display = "none";
     document.getElementById("judgeButtons").style.display = "none";
     document.getElementById("buzzBtn").disabled = false;
-
     document.getElementById("showAnswerBtn").style.display = "inline-block";
 
     if (currentIndex >= questions.length) {
         document.getElementById("question").innerText = "問題はもうありません。";
+        document.getElementById("buzzBtn").disabled = true;
         return;
     }
 
@@ -78,10 +72,8 @@ function showQuestion() {
     currentQuestionFull = q.question;
     currentIndex++;
 
-    // ① まず「問題」と表示
     document.getElementById("question").innerText = "問題";
 
-    // ② 1秒後に文字送り開始
     setTimeout(() => {
         document.getElementById("question").innerText = "";
         charIndex = 0;
@@ -89,30 +81,25 @@ function showQuestion() {
         displayInterval = setInterval(() => {
             if (charIndex >= currentQuestionFull.length) {
                 clearInterval(displayInterval);
-
-                // ★ここを追加
                 document.getElementById("answerSection").style.display = "block";
-                // ★ 追加：読み上げが終わったら早押しボタンを無効化する
+                
+                // 読み上げ終了後は早押し不可
                 document.getElementById("buzzBtn").disabled = true;
+
                 startCountdown();
-        
                 return;
             }
             document.getElementById("question").innerText += currentQuestionFull[charIndex];
             charIndex++;
         }, 100);
-
     }, 1000);
 }
 
-// 早押し
 function buzz() {
     document.getElementById("buzzBtn").disabled = true;
     clearInterval(displayInterval);
-
     document.getElementById("answerSection").style.display = "block";
-
-    startCountdown();  // ←これだけにする
+    startCountdown();
 }
 
 function startCountdown() {
@@ -137,19 +124,25 @@ function showAnswer() {
         clearInterval(countdownInterval);
         isCounting = false;
     }
-
     document.getElementById("countdown").innerText = "";
     document.getElementById("question").innerText = currentQuestionFull;
     document.getElementById("answerText").innerText = "答え: " + currentAnswer;
     document.getElementById("judgeButtons").style.display = "block";
-
-    // 追加 ↓
     document.getElementById("showAnswerBtn").style.display = "none";
 }
 
-// ボタン
+// 正解・不正解ボタンの挙動修正
+document.getElementById("correctBtn").addEventListener("click", showQuestion);
+
+document.getElementById("incorrectBtn").addEventListener("click", () => {
+    const currentQ = { question: currentQuestionFull, answer: currentAnswer };
+    let targetIndex = currentIndex + 10;
+    if (targetIndex > questions.length) targetIndex = questions.length;
+    
+    questions.splice(targetIndex, 0, currentQ);
+    showQuestion();
+});
+
 document.getElementById("nextBtn").addEventListener("click", showQuestion);
 document.getElementById("buzzBtn").addEventListener("click", buzz);
-document.getElementById("correctBtn").addEventListener("click", showQuestion);
-document.getElementById("incorrectBtn").addEventListener("click", showQuestion);
 document.getElementById("showAnswerBtn").addEventListener("click", showAnswer);

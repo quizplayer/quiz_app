@@ -3,35 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>早押しクイズ（スマホ対応）</title>
+<title>早押しクイズ</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+<header>
+    <h1>早押しクイズ</h1>
+    <button onclick="location.href='search.html'" class="smallBtn">問題検索</button>
+</header>
+
 <div class="container">
+    <button id="loadBtn" class="smallBtn">問題集読み込み</button>
+    <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-top: 5px;"></div>
+    <input type="file" id="fileInput" accept=".csv" style="display:none;">
 
-<h1>早押しクイズ</h1>
+    <h2 id="question">問題集を読み込んでください</h2>
 
-<button onclick="location.href='search.html'" class="smallBtn">
-問題検索
-</button>
+    <div id="answerSection" style="display:none;">
+        <p id="answerText"></p>
+        <button id="showAnswerBtn" class="subBtn">解答を表示</button>
+        <p id="countdown"></p>
+    </div>
 
-<h2 id="question">問題集を読み込んでください</h2>
-
-<button id="loadBtn" class="smallBtn">問題集読み込み</button>
-<div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-top: 5px;"></div><input type="file" id="fileInput" accept=".csv" style="display:none;">
-
-<div id="answerSection" style="display:none;">
-    <p id="answerText"></p>
-    <button id="showAnswerBtn" class="subBtn">解答を表示</button>
-    <p id="countdown"></p>
-</div>
-
-<div id="judgeButtons" style="display:none;">
-    <button id="correctBtn" class="judgeBtn correctBtn">正解</button>
-    <button id="incorrectBtn" class="judgeBtn incorrectBtn">不正解</button>
-</div>
-
+    <div id="judgeButtons" style="display:none;">
+        <button id="correctBtn" class="judgeBtn correctBtn">正解</button>
+        <button id="incorrectBtn" class="judgeBtn incorrectBtn">不正解</button>
+    </div>
 </div>
 
 <div id="controlPanel">

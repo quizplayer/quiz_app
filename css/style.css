@@ -5,17 +5,32 @@ body {
     background: #f9f9f9;
 }
 
-/* コンテンツ */
-.container {
-    padding: 15px;
-    padding-bottom: 130px;
+/* ===== ヘッダー固定 ===== */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: #fff;
+    padding: 0 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    box-sizing: border-box;
 }
 
-/* タイトル */
-h1 {
-    text-align: center;
-    font-size: 1.6em;
-    margin-bottom: 15px;
+header h1 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #333;
+}
+
+/* コンテンツ */
+.container {
+    padding: 80px 15px 130px 15px; /* 上部ヘッダーと下部パネルの余白 */
 }
 
 /* ===== 問題文（左詰め） ===== */
@@ -24,7 +39,7 @@ h1 {
     min-height: 100px;
     margin: 20px 0;
     line-height: 1.6;
-    text-align: left;   /* ← 左詰め */
+    text-align: left;
     word-break: break-word;
 }
 
@@ -32,7 +47,7 @@ h1 {
 #answerText {
     font-size: 1.6em;
     font-weight: bold;
-    text-align: right;  /* ← 右詰め */
+    text-align: right;
     color: #e91e63;
     margin-top: 10px;
 }
@@ -43,9 +58,9 @@ button {
     font-size: 1.2em;
     border-radius: 14px;
     border: none;
+    cursor: pointer;
 }
 
-/* 小さめボタン（問題集読み込み） */
 .smallBtn {
     padding: 10px 16px;
     font-size: 0.9em;
@@ -53,7 +68,6 @@ button {
     color: white;
 }
 
-/* 解答表示ボタン */
 .subBtn {
     background: #777;
     color: white;
@@ -91,11 +105,11 @@ button {
     font-weight: bold;
 }
 
-/* 無効化表示 */
 button:disabled {
     opacity: 0.4;
     background-color: #ccc !important;
     color: #666 !important;
+    cursor: not-allowed;
 }
 
 /* ===== 下部固定パネル ===== */
@@ -109,6 +123,7 @@ button:disabled {
     box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
     display: flex;
     justify-content: space-around;
+    box-sizing: border-box;
 }
 
 #controlPanel button {
