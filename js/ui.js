@@ -7,7 +7,7 @@ window.onload = () => {
     const fileName = Storage.getFileName();
     if (fileName) {
         document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + fileName;
-        QuizEngine.init(); // 起動時にリセット
+        QuizEngine.init(); 
         if (QuizEngine.questions.length > 0) {
             enableButtons();
             showNextQuestion();
@@ -24,16 +24,13 @@ function showNextQuestion() {
     resetUI();
     currentQ = QuizEngine.getNext();
     if (!currentQ) {
-        document.getElementById("question").innerText = "問題がありません。";
+        document.getElementById("question").innerText = "問題がありません。リセットボタンで最初からやり直せます。";
+        document.getElementById("buzzBtn").disabled = true;
         return;
     }
-    
     charIndex = 0;
     displayInterval = setInterval(() => {
-        if (charIndex >= currentQ.question.length) {
-            stopDisplay();
-            return;
-        }
+        if (charIndex >= currentQ.question.length) { stopDisplay(); return; }
         document.getElementById("question").innerText += currentQ.question[charIndex];
         charIndex++;
     }, 100);
@@ -51,12 +48,8 @@ function startCountdown() {
     document.getElementById("countdown").innerText = count + "秒";
     countdownInterval = setInterval(() => {
         count--;
-        if (count <= 0) {
-            clearInterval(countdownInterval);
-            revealAnswer();
-        } else {
-            document.getElementById("countdown").innerText = count + "秒";
-        }
+        if (count <= 0) { clearInterval(countdownInterval); revealAnswer(); }
+        else { document.getElementById("countdown").innerText = count + "秒"; }
     }, 1000);
 }
 
@@ -82,20 +75,33 @@ function resetUI() {
     document.getElementById("buzzBtn").disabled = false;
 }
 
-// イベント登録
+// 読み込み・リセットイベント
 document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
 document.getElementById("fileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-        const lines = event.target.result.trim().split(/\r\n|\n/).filter(l => l.trim() !== "");
-        const data = lines.map(l => ({ question: l.split(",")[0], answer: l.split(",").slice(1).join(",") }));
+        const parsedRows = QuizEngine.parseCSV(event.target.result);
+        const data = parsedRows.map(row => ({
+            question: row[0] ? row[0].replace(/^"|"$/g, '') : "",
+            answer: row[1] ? row[1].replace(/^"|"$/g, '') : ""
+        })).filter(q => q.question !== "");
         Storage.saveFileName(file.name);
         Storage.saveAll(data);
-        location.reload(); // 再読み込みして初期化
+        location.reload(); 
     };
     reader.readAsText(file, "UTF-8");
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+    if (confirm("進捗をリセットして最初からやり直しますか？")) {
+        if (QuizEngine.init()) {
+            //alert("リセット完了（全問復活＆シャッフル）");
+            enableButtons();
+            showNextQuestion();
+        } else { alert("問題集が読み込まれていません。"); }
+    }
 });
 
 document.getElementById("buzzBtn").addEventListener("click", stopDisplay);

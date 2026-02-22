@@ -1,6 +1,34 @@
 const QuizEngine = {
     questions: [],
 
+    // セル内改行対応パース
+    parseCSV(text) {
+        const rows = [];
+        let currentRow = [];
+        let currentCell = "";
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) {
+                currentRow.push(currentCell.trim());
+                currentCell = "";
+            } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                if (currentCell !== "" || currentRow.length > 0) {
+                    currentRow.push(currentCell.trim());
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentCell = "";
+                }
+            } else { currentCell += char; }
+        }
+        if (currentCell !== "" || currentRow.length > 0) {
+            currentRow.push(currentCell.trim());
+            rows.push(currentRow);
+        }
+        return rows;
+    },
+
     shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -9,21 +37,20 @@ const QuizEngine = {
         return array;
     },
 
-    // 起動時の初期化（リセットしてシャッフル）
     init() {
         const all = Storage.loadAll();
         if (all.length > 0) {
-            this.questions = this.shuffle([...all]); // 全問復活させてシャッフル
+            this.questions = this.shuffle([...all]);
             Storage.saveCurrentProgress(this.questions);
+            return true;
         }
+        return false;
     },
 
     getNext() {
-        if (this.questions.length === 0) return null;
-        return this.questions.shift();
+        return this.questions.length === 0 ? null : this.questions.shift();
     },
 
-    // 指定位置に問題を差し戻す
     retry(questionObj, offset) {
         const pos = Math.min(offset, this.questions.length);
         this.questions.splice(pos, 0, questionObj);

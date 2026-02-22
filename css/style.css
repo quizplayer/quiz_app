@@ -33,7 +33,7 @@ header h1 {
     padding: 80px 15px 130px 15px;
 }
 
-/* ===== 問題文（左詰め） ===== */
+/* ===== 問題文（左詰め・改行維持） ===== */
 #question {
     font-size: 1.4em;
     min-height: 100px;
@@ -41,6 +41,7 @@ header h1 {
     line-height: 1.6;
     text-align: left;
     word-break: break-word;
+    white-space: pre-wrap; /* CSV内の改行を反映 */
 }
 
 /* ===== 解答（右詰め） ===== */
@@ -64,8 +65,10 @@ button {
 .smallBtn {
     padding: 10px 16px;
     font-size: 0.9em;
-    background: #2196F3;
+    background: #2196F3; /* 問題集読み込み・リセット共通の青 */
     color: white;
+    border-radius: 8px;
+    margin-right: 5px;
 }
 
 .subBtn {
@@ -75,7 +78,7 @@ button {
     margin-top: 10px;
 }
 
-/* ===== 判定ボタンエリア（修正版） ===== */
+/* ===== 判定ボタンエリア ===== */
 #judgeButtons {
     display: flex;
     flex-direction: column;

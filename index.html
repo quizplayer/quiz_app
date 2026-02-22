@@ -13,11 +13,14 @@
     </header>
 
     <div class="container">
-        <button id="loadBtn" class="smallBtn">問題集読み込み</button>
-        <div id="fileNameDisplay" style="font-size: 0.8em; color: #666;"></div>
+        <div style="margin-bottom: 10px; display: flex;">
+            <button id="loadBtn" class="smallBtn">問題集読み込み</button>
+            <button id="resetBtn" class="smallBtn">再読み込み</button>
+        </div>
+        <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-bottom: 20px;"></div>
         <input type="file" id="fileInput" accept=".csv" style="display:none;">
 
-        <h2 id="question">読み込み中...</h2>
+        <h2 id="question"></h2>
 
         <div id="answerSection" style="display:none;">
             <p id="answerText"></p>

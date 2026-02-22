@@ -48,19 +48,26 @@
         });
 
         document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
-        document.getElementById("fileInput").addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const lines = event.target.result.trim().split(/\r\n|\n/).filter(l => l.trim() !== "");
-                const data = lines.map(l => ({ question: l.split(",")[0], answer: l.split(",").slice(1).join(",") }));
-                Storage.saveFileName(file.name);
-                Storage.saveAll(data);
-                location.reload();
-            };
-            reader.readAsText(file, "UTF-8");
-        });
+// ...読み込み部分のみ抜粋...
+document.getElementById("fileInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        // QuizEngineはクイズ画面用なので、ここでは直接ロジックを書くか、quizEngine.jsを読み込んで使う
+        // quizEngine.jsを読み込んでいる前提:
+        const parsedRows = QuizEngine.parseCSV(event.target.result);
+        const data = parsedRows.map(row => ({
+            question: row[0] ? row[0].replace(/^"|"$/g, '') : "",
+            answer: row[1] ? row[1].replace(/^"|"$/g, '') : ""
+        })).filter(q => q.question !== "");
+
+        Storage.saveFileName(file.name);
+        Storage.saveAll(data);
+        location.reload();
+    };
+    reader.readAsText(file, "UTF-8");
+});
     </script>
 </body>
 </html>
