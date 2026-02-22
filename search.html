@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>問題検索</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+<h1>問題検索</h1>
+
+<button onclick="location.href='quiz.html'" class="smallBtn">
+クイズへ戻る
+</button>
+
+<input type="text" id="searchInput" placeholder="キーワード検索" style="width:100%; padding:10px; font-size:1em;">
+<button id="loadBtn" class="smallBtn">問題集読み込み</button>
+<input type="file" id="fileInput" accept=".csv" style="display:none;">
+
+<ul id="resultList" style="margin-top:20px;"></ul>
+
+</div>
+
+<script>
+let questions = [];
+
+document.getElementById("loadBtn").addEventListener("click", () => {
+    document.getElementById("fileInput").click();
+});
+
+document.getElementById("fileInput").addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const lines = e.target.result.trim().split("\n");
+        questions = lines.map(line => {
+            const parts = line.split(",");
+            return { question: parts[0], answer: parts[1] };
+        });
+    };
+    reader.readAsText(file, "UTF-8");
+});
+
+document.getElementById("searchInput").addEventListener("input", function() {
+    const keyword = this.value.toLowerCase();
+    const results = questions.filter(q => q.question.toLowerCase().includes(keyword));
+
+    const list = document.getElementById("resultList");
+    list.innerHTML = "";
+
+    results.forEach(q => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${q.question}</strong><br>答え: ${q.answer}`;
+        li.style.marginBottom = "15px";
+        list.appendChild(li);
+    });
+});
+</script>
+
+</body>
+</html>
