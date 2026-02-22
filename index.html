@@ -27,8 +27,11 @@
     </div>
 
     <div id="judgeButtons" style="display:none;">
-        <button id="correctBtn" class="judgeBtn correctBtn">正解</button>
-        <button id="incorrectBtn" class="judgeBtn incorrectBtn">不正解</button>
+        <button id="correctBtn" class="judgeBtn correctBtn">正解 (完了)</button>
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <button id="retry1Btn" class="judgeBtn retryBtn" style="background-color: #FF9800; color: white;">1問後に表示</button>
+            <button id="retry10Btn" class="judgeBtn retryBtn" style="background-color: #f44336; color: white;">10問後に表示</button>
+        </div>
     </div>
 </div>
 
