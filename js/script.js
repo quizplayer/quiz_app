@@ -1,5 +1,4 @@
 let questions = [];
-let currentIndex = 0;
 let currentAnswer = "";
 let currentQuestionFull = "";
 let displayInterval = null;
@@ -8,27 +7,46 @@ let countdownInterval = null;
 let countdownValue = 5;
 let isCounting = false;
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+// ページ読み込み時の処理
+window.onload = () => {
+    const savedData = localStorage.getItem("quiz_questions");
+    const savedFileName = localStorage.getItem("quiz_filename");
+    
+    if (savedData) {
+        questions = JSON.parse(savedData);
+        if (savedFileName) {
+            document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + savedFileName;
+        }
+        if (questions.length > 0) {
+            document.getElementById("nextBtn").disabled = false;
+            document.getElementById("buzzBtn").disabled = false;
+            // ページを戻ったときは、自動で次のランダム問題を表示
+            showQuestion();
+        }
     }
-}
+};
 
-document.getElementById("loadBtn").addEventListener("click", () => {
-    document.getElementById("fileInput").click();
-});
+// CSV読み込み
+document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
 
 document.getElementById("fileInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    localStorage.setItem("quiz_filename", file.name);
     document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        parseCSV(e.target.result);
-        shuffleArray(questions);
+        const lines = e.target.result.trim().split("\n");
+        questions = lines.map(line => {
+            const parts = line.split(",");
+            return { question: parts[0], answer: parts.slice(1).join(",") };
+        });
+        
+        // 読み込み直後に保存
+        saveToStorage();
+
         if (questions.length > 0) {
             document.getElementById("nextBtn").disabled = false;
             document.getElementById("buzzBtn").disabled = false;
@@ -38,15 +56,8 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
     reader.readAsText(file, "UTF-8");
 });
 
-function parseCSV(text) {
-    const lines = text.trim().split("\n");
-    questions = lines.map(line => {
-        const parts = line.split(",");
-        const q = parts[0];
-        const a = parts.slice(1).join(",");
-        return { question: q, answer: a };
-    });
-    currentIndex = 0;
+function saveToStorage() {
+    localStorage.setItem("quiz_questions", JSON.stringify(questions));
 }
 
 function showQuestion() {
@@ -61,38 +72,37 @@ function showQuestion() {
     document.getElementById("buzzBtn").disabled = false;
     document.getElementById("showAnswerBtn").style.display = "inline-block";
 
-    if (currentIndex >= questions.length) {
-        document.getElementById("question").innerText = "問題はもうありません。";
+    if (questions.length === 0) {
+        document.getElementById("question").innerText = "問題がありません。CSVを読み込んでください。";
         document.getElementById("buzzBtn").disabled = true;
         return;
     }
 
-    const q = questions[currentIndex];
-    currentAnswer = q.answer;
-    currentQuestionFull = q.question;
-    currentIndex++;
+    // ★ 完全ランダム：配列からランダムなインデックスを選択
+    const randomIndex = Math.floor(Math.random() * questions.length);
+    const qData = questions[randomIndex];
 
-    document.getElementById("question").innerText = "問題";
+    currentAnswer = qData.answer;
+    currentQuestionFull = qData.question;
 
-    setTimeout(() => {
-        document.getElementById("question").innerText = "";
-        charIndex = 0;
+    // ★ 出題した問題を配列から一旦削除（正解なら消えたまま、不正解なら後で戻す）
+    questions.splice(randomIndex, 1);
+    saveToStorage();
 
-        displayInterval = setInterval(() => {
-            if (charIndex >= currentQuestionFull.length) {
-                clearInterval(displayInterval);
-                document.getElementById("answerSection").style.display = "block";
-                
-                // 読み上げ終了後は早押し不可
-                document.getElementById("buzzBtn").disabled = true;
+    document.getElementById("question").innerText = "";
+    charIndex = 0;
 
-                startCountdown();
-                return;
-            }
-            document.getElementById("question").innerText += currentQuestionFull[charIndex];
-            charIndex++;
-        }, 100);
-    }, 1000);
+    displayInterval = setInterval(() => {
+        if (charIndex >= currentQuestionFull.length) {
+            clearInterval(displayInterval);
+            document.getElementById("answerSection").style.display = "block";
+            document.getElementById("buzzBtn").disabled = true;
+            startCountdown();
+            return;
+        }
+        document.getElementById("question").innerText += currentQuestionFull[charIndex];
+        charIndex++;
+    }, 100);
 }
 
 function buzz() {
@@ -106,7 +116,6 @@ function startCountdown() {
     countdownValue = 5;
     isCounting = true;
     document.getElementById("countdown").innerText = countdownValue + "秒";
-
     countdownInterval = setInterval(() => {
         countdownValue--;
         if (countdownValue <= 0) {
@@ -120,10 +129,7 @@ function startCountdown() {
 }
 
 function showAnswer() {
-    if (isCounting) {
-        clearInterval(countdownInterval);
-        isCounting = false;
-    }
+    if (isCounting) { clearInterval(countdownInterval); isCounting = false; }
     document.getElementById("countdown").innerText = "";
     document.getElementById("question").innerText = currentQuestionFull;
     document.getElementById("answerText").innerText = "答え: " + currentAnswer;
@@ -131,15 +137,17 @@ function showAnswer() {
     document.getElementById("showAnswerBtn").style.display = "none";
 }
 
-// 正解・不正解ボタンの挙動修正
+// 正解：そのまま次へ（配列からは既に消えている）
 document.getElementById("correctBtn").addEventListener("click", showQuestion);
 
+// 不正解：10問後（または最後）に挿入して次へ
 document.getElementById("incorrectBtn").addEventListener("click", () => {
-    const currentQ = { question: currentQuestionFull, answer: currentAnswer };
-    let targetIndex = currentIndex + 10;
-    if (targetIndex > questions.length) targetIndex = questions.length;
+    const retryQ = { question: currentQuestionFull, answer: currentAnswer };
+    let insertPos = 10;
+    if (insertPos > questions.length) insertPos = questions.length;
     
-    questions.splice(targetIndex, 0, currentQ);
+    questions.splice(insertPos, 0, retryQ);
+    saveToStorage();
     showQuestion();
 });
 

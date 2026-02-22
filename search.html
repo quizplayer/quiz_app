@@ -14,25 +14,38 @@
 </header>
 
 <div class="container">
-    <input type="text" id="searchInput" placeholder="キーワード検索" style="width:100%; padding:10px; font-size:1em; box-sizing: border-box;">
-    <button id="loadBtn" class="smallBtn" style="margin-top: 10px;">問題集読み込み</button>
-    <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-top: 5px;"></div>
-    <input type="file" id="fileInput" accept=".csv" style="display:none;">
+    <div style="margin-bottom: 20px;">
+        <input type="text" id="searchInput" placeholder="キーワード検索" style="width:100%; padding:12px; font-size:1em; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px;">
+    </div>
 
-    <ul id="resultList" style="margin-top:20px; padding: 0; list-style: none;"></ul>
+    <div style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 15px;">
+        <button id="loadBtn" class="smallBtn">問題集読み込み</button>
+        <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-top: 5px;"></div>
+        <input type="file" id="fileInput" accept=".csv" style="display:none;">
+    </div>
+
+    <ul id="resultList" style="margin-top:25px; padding: 0; list-style: none;"></ul>
 </div>
 
 <script>
 let questions = [];
 
-document.getElementById("loadBtn").addEventListener("click", () => {
-    document.getElementById("fileInput").click();
-});
+window.onload = () => {
+    const savedData = localStorage.getItem("quiz_questions");
+    const savedFileName = localStorage.getItem("quiz_filename");
+    if (savedData) {
+        questions = JSON.parse(savedData);
+        if (savedFileName) document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + savedFileName;
+    }
+};
+
+document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
 
 document.getElementById("fileInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    localStorage.setItem("quiz_filename", file.name);
     document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
 
     const reader = new FileReader();
@@ -40,10 +53,9 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
         const lines = e.target.result.trim().split("\n");
         questions = lines.map(line => {
             const parts = line.split(",");
-            const q = parts[0];
-            const a = parts.slice(1).join(",");
-            return { question: q, answer: a };
+            return { question: parts[0], answer: parts.slice(1).join(",") };
         });
+        localStorage.setItem("quiz_questions", JSON.stringify(questions));
     };
     reader.readAsText(file, "UTF-8");
 });
@@ -51,18 +63,13 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
 document.getElementById("searchInput").addEventListener("input", function() {
     const keyword = this.value.toLowerCase();
     const results = questions.filter(q => q.question.toLowerCase().includes(keyword));
-
     const list = document.getElementById("resultList");
     list.innerHTML = "";
-
     results.forEach(q => {
         const li = document.createElement("li");
         li.innerHTML = `<strong>${q.question}</strong><br>答え: ${q.answer}`;
-        li.style.marginBottom = "15px";
-        li.style.padding = "10px";
-        li.style.background = "#fff";
-        li.style.borderRadius = "8px";
-        li.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+        li.style.marginBottom = "15px"; li.style.padding = "10px"; li.style.background = "#fff";
+        li.style.borderRadius = "8px"; li.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
         list.appendChild(li);
     });
 });
