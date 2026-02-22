@@ -58,6 +58,9 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
             };
         });
 
+        // ★追加：検索用に「全データ」をそのまま保存する
+        localStorage.setItem("all_questions", JSON.stringify(newQuestions));
+
         // 読み込み時にシャッフルして順番を固定する
         shuffleArray(newQuestions);
         questions = newQuestions;

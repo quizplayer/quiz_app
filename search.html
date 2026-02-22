@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>問題検索</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>問題検索</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
 
 <div class="container">
     <div style="margin-bottom: 20px;">
-        <input type="text" id="searchInput" placeholder="キーワード検索" style="width:100%; padding:12px; font-size:1em; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px;">
+        <input type="text" id="searchInput" placeholder="問題文または答えで検索..." style="width:100%; padding:12px; font-size:1em; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px; outline: none;">
     </div>
 
     <div style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 15px;">
@@ -28,19 +28,26 @@
 </div>
 
 <script>
-let questions = [];
+let allQuestions = [];
 
+// ページ読み込み時にlocalStorageから「全データ」を復元
 window.onload = () => {
-    const savedData = localStorage.getItem("quiz_questions");
+    const savedData = localStorage.getItem("all_questions");
     const savedFileName = localStorage.getItem("quiz_filename");
     if (savedData) {
-        questions = JSON.parse(savedData);
-        if (savedFileName) document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + savedFileName;
+        allQuestions = JSON.parse(savedData);
+        if (savedFileName) {
+            document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + savedFileName;
+        }
     }
 };
 
-document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
+// ファイル選択ボタンの連動
+document.getElementById("loadBtn").addEventListener("click", () => {
+    document.getElementById("fileInput").click();
+});
 
+// CSVファイル読み込み処理
 document.getElementById("fileInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -51,27 +58,64 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
     const reader = new FileReader();
     reader.onload = function(e) {
         const lines = e.target.result.trim().split("\n");
-        questions = lines.map(line => {
+        const data = lines.map(line => {
             const parts = line.split(",");
-            return { question: parts[0], answer: parts.slice(1).join(",") };
+            return { 
+                question: parts[0], 
+                answer: parts.slice(1).join(",") 
+            };
         });
-        localStorage.setItem("quiz_questions", JSON.stringify(questions));
+        
+        // 検索用（全データ）と出題用（初期データ）を両方保存
+        localStorage.setItem("all_questions", JSON.stringify(data));
+        localStorage.setItem("quiz_questions", JSON.stringify(data)); 
+        allQuestions = data;
+        
+        alert("問題集を読み込みました（" + data.length + "問）");
     };
     reader.readAsText(file, "UTF-8");
 });
 
+// リアルタイム検索ロジック
 document.getElementById("searchInput").addEventListener("input", function() {
     const keyword = this.value.toLowerCase();
-    const results = questions.filter(q => q.question.toLowerCase().includes(keyword));
     const list = document.getElementById("resultList");
+    
+    // 入力が空の場合はリストをクリア
+    if (!keyword) {
+        list.innerHTML = "";
+        return;
+    }
+
+    // 問題文または答えにキーワードが含まれるものを抽出
+    const results = allQuestions.filter(q => 
+        q.question.toLowerCase().includes(keyword) || 
+        q.answer.toLowerCase().includes(keyword)
+    );
+
     list.innerHTML = "";
+
     results.forEach(q => {
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${q.question}</strong><br>答え: ${q.answer}`;
-        li.style.marginBottom = "15px"; li.style.padding = "10px"; li.style.background = "#fff";
-        li.style.borderRadius = "8px"; li.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+        
+        li.innerHTML = `
+            <div style="color: #333; font-weight: bold; margin-bottom: 5px;">${q.question}</div>
+            <div style="color: #e91e63; font-size: 0.9em; font-weight: bold;">答え: ${q.answer}</div>
+        `;
+        
+        li.style.marginBottom = "15px"; 
+        li.style.padding = "12px"; 
+        li.style.background = "#fff";
+        li.style.borderRadius = "8px"; 
+        li.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
+        li.style.borderLeft = "5px solid #2196F3"; // 視認性向上のアクセント
+        
         list.appendChild(li);
     });
+
+    if (results.length === 0) {
+        list.innerHTML = "<li style='text-align:center; color:#999; margin-top:20px;'>一致する問題が見つかりません</li>";
+    }
 });
 </script>
 
