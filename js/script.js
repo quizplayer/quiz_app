@@ -85,8 +85,10 @@ function showQuestion() {
                 clearInterval(displayInterval);
 
                 // ★ここを追加
-        document.getElementById("answerSection").style.display = "block";
-        startCountdown();
+                document.getElementById("answerSection").style.display = "block";
+                // ★ 追加：読み上げが終わったら早押しボタンを無効化する
+                document.getElementById("buzzBtn").disabled = true;
+                startCountdown();
         
                 return;
             }
