@@ -58,6 +58,8 @@ function showQuestion() {
     document.getElementById("judgeButtons").style.display = "none";
     document.getElementById("buzzBtn").disabled = false;
 
+    document.getElementById("showAnswerBtn").style.display = "inline-block";
+
     if (currentIndex >= questions.length) {
         document.getElementById("question").innerText = "問題はもうありません。";
         return;
@@ -121,6 +123,9 @@ function showAnswer() {
     document.getElementById("question").innerText = currentQuestionFull;
     document.getElementById("answerText").innerText = "答え: " + currentAnswer;
     document.getElementById("judgeButtons").style.display = "block";
+
+    // 追加 ↓
+    document.getElementById("showAnswerBtn").style.display = "none";
 }
 
 // ボタン
