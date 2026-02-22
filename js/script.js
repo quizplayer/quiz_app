@@ -25,6 +25,9 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // ★ 追加：ファイル名を表示する
+    document.getElementById("fileNameDisplay").innerText = "読み込み中: " + file.name;
+
     const reader = new FileReader();
     reader.onload = function(e) {
         parseCSV(e.target.result);
@@ -32,6 +35,9 @@ document.getElementById("fileInput").addEventListener("change", (event) => {
         if (questions.length > 0) {
             document.getElementById("nextBtn").disabled = false;
             document.getElementById("buzzBtn").disabled = false;
+
+            // ★ 追加：読み込み完了後に表示を更新
+            document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
 
             showQuestion();
         }
