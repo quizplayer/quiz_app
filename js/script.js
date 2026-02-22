@@ -8,14 +8,28 @@ let countdownValue = 5;
 let isCounting = false;
 
 // ページ読み込み時にlocalStorageから復元
+// ページ読み込み時の処理
 window.onload = () => {
-    const savedData = localStorage.getItem("quiz_questions");
+    // 1. 全データ（all_questions）があるか確認
+    const allData = localStorage.getItem("all_questions");
     const savedFileName = localStorage.getItem("quiz_filename");
-    if (savedData) {
-        questions = JSON.parse(savedData);
+
+    if (allData) {
+        // 2. 起動するたびに全データを読み込み直す（＝リセット）
+        let resetQuestions = JSON.parse(allData);
+        
+        // 3. シャッフルする
+        shuffleArray(resetQuestions);
+        questions = resetQuestions;
+
+        // 4. 出題リストの状態を保存（前回の続きを上書き）
+        saveToStorage();
+
+        // 表示の更新
         if (savedFileName) {
             document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + savedFileName;
         }
+        
         if (questions.length > 0) {
             document.getElementById("nextBtn").disabled = false;
             document.getElementById("buzzBtn").disabled = false;
@@ -23,7 +37,6 @@ window.onload = () => {
         }
     }
 };
-
 // データの保存
 function saveToStorage() {
     localStorage.setItem("quiz_questions", JSON.stringify(questions));
