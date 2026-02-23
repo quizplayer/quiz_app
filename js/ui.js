@@ -34,7 +34,8 @@ function switchMode(voice) {
 
 function enableButtons() {
     document.getElementById("nextBtn").disabled = false;
-    document.getElementById("buzzBtn").disabled = false;
+    // 初期状態（問題ボタン待ち）では早押しは無効
+    document.getElementById("buzzBtn").disabled = true;
 }
 
 function showNextQuestion() {
@@ -46,14 +47,24 @@ function showNextQuestion() {
         return;
     }
 
+    // 問題文エリアを常に左詰めに設定
+    document.getElementById("question").style.display = "flex";
+    document.getElementById("question").style.justifyContent = "flex-start";
+
     if (isFirstQuestion) {
+        // 最初の「問題」ボタン表示中も早押しは無効化
+        document.getElementById("buzzBtn").disabled = true;
         document.getElementById("question").innerHTML = '<button id="startBtn" class="judgeBtn correctBtn" style="width: auto; padding: 10px 40px;">問題</button>';
         document.getElementById("startBtn").addEventListener("click", () => {
             document.getElementById("question").innerHTML = ""; 
             isFirstQuestion = false;
+            // 読み上げ開始と同時に早押しを有効化
+            document.getElementById("buzzBtn").disabled = false;
             startTextFlow();
         });
     } else {
+        // 2問目以降（自動開始時）は有効化して開始
+        document.getElementById("buzzBtn").disabled = false;
         startTextFlow();
     }
 }
@@ -78,12 +89,9 @@ function startVisualFlow() {
     }, 100);
 }
 
-// 【改善版】音声読み上げ：カッコ除去を強化
 function startVoiceFlow() {
-    // 修正ポイント：半角・全角が混在したカッコ [ (（ ] ～ [ )） ] をすべて中身ごと消去
+    // 強力なカッコ除去 (全角半角混在対応)
     const cleanedText = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
-    
-    // 「問題。」を頭に付ける
     const speakText = "問題。" + cleanedText;
     
     currentUtterance = new SpeechSynthesisUtterance(speakText);
@@ -136,6 +144,8 @@ function resetUI() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
     speechSynthesis.cancel();
+    // 表示のリセットと左詰め
+    document.getElementById("question").style.justifyContent = "flex-start";
     document.getElementById("question").innerText = "";
     document.getElementById("answerText").innerText = "";
     document.getElementById("answerSection").style.display = "none";
@@ -144,7 +154,7 @@ function resetUI() {
     document.getElementById("buzzBtn").disabled = false;
 }
 
-// 【修正】リロードなしでCSV読み込み
+// リロードなしでのCSV読み込み
 document.getElementById("fileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
