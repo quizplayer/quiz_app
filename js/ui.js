@@ -8,7 +8,7 @@ let isAutoMode = false;
 let currentUtterance = null;
 
 // --- 調整用パラメータ ---
-const SPEECH_RATE = 1.2;      // 読み上げ速度 (1.0が標準)
+const SPEECH_RATE = 1.0;      // 読み上げ速度 (1.0が標準)
 const INTERVAL_TIME = 500;    // 自動再生時の間隔 (ms) 1000→500へ短縮
 // -----------------------
 
