@@ -33,15 +33,18 @@ header h1 {
     padding: 80px 15px 130px 15px;
 }
 
-/* ===== 問題文（左詰め・改行維持） ===== */
+/* ===== 問題文エリア ===== */
 #question {
     font-size: 1.4em;
-    min-height: 100px;
+    min-height: 150px; /* ボタン配置のために少し広めに確保 */
     margin: 20px 0;
     line-height: 1.6;
     text-align: left;
     word-break: break-word;
-    white-space: pre-wrap; /* CSV内の改行を反映 */
+    white-space: pre-wrap;
+    display: flex;           /* 中央配置用 */
+    justify-content: center; /* 中央配置用 */
+    align-items: center;     /* 中央配置用 */
 }
 
 /* ===== 解答（右詰め） ===== */
@@ -65,7 +68,7 @@ button {
 .smallBtn {
     padding: 10px 16px;
     font-size: 0.9em;
-    background: #2196F3; /* 問題集読み込み・リセット共通の青 */
+    background: #2196F3;
     color: white;
     border-radius: 8px;
     margin-right: 5px;

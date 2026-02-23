@@ -2,6 +2,7 @@ let currentQ = null;
 let displayInterval = null;
 let countdownInterval = null;
 let charIndex = 0;
+let isFirstQuestion = true; // 最初の1問目判定用
 
 window.onload = () => {
     const fileName = Storage.getFileName();
@@ -10,6 +11,7 @@ window.onload = () => {
         QuizEngine.init(); 
         if (QuizEngine.questions.length > 0) {
             enableButtons();
+            isFirstQuestion = true; // 起動時はボタン表示から開始
             showNextQuestion();
         }
     }
@@ -28,9 +30,30 @@ function showNextQuestion() {
         document.getElementById("buzzBtn").disabled = true;
         return;
     }
+
+    if (isFirstQuestion) {
+        // 最初の1問目：ボタン表示
+        document.getElementById("question").innerHTML = '<button id="startBtn" class="judgeBtn correctBtn" style="width: auto; padding: 10px 40px;">問題</button>';
+        document.getElementById("startBtn").addEventListener("click", () => {
+            document.getElementById("question").innerHTML = ""; 
+            document.getElementById("question").style.justifyContent = "flex-start";
+            isFirstQuestion = false; // 以降は自動再生
+            startTextFlow();
+        });
+    } else {
+        // 2問目以降：即座に文字送り開始
+        document.getElementById("question").style.justifyContent = "flex-start";
+        startTextFlow();
+    }
+}
+
+function startTextFlow() {
     charIndex = 0;
     displayInterval = setInterval(() => {
-        if (charIndex >= currentQ.question.length) { stopDisplay(); return; }
+        if (charIndex >= currentQ.question.length) {
+            stopDisplay();
+            return;
+        }
         document.getElementById("question").innerText += currentQ.question[charIndex];
         charIndex++;
     }, 100);
@@ -48,14 +71,19 @@ function startCountdown() {
     document.getElementById("countdown").innerText = count + "秒";
     countdownInterval = setInterval(() => {
         count--;
-        if (count <= 0) { clearInterval(countdownInterval); revealAnswer(); }
-        else { document.getElementById("countdown").innerText = count + "秒"; }
+        if (count <= 0) {
+            clearInterval(countdownInterval);
+            revealAnswer();
+        } else {
+            document.getElementById("countdown").innerText = count + "秒";
+        }
     }, 1000);
 }
 
 function revealAnswer() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
+    document.getElementById("question").style.justifyContent = "flex-start";
     document.getElementById("question").innerText = currentQ.question;
     document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
     document.getElementById("answerSection").style.display = "block";
@@ -67,6 +95,8 @@ function revealAnswer() {
 function resetUI() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
+    // ボタン表示に備えて中央揃え（自動再生時は直後に左揃えに上書きされる）
+    document.getElementById("question").style.justifyContent = "center"; 
     document.getElementById("question").innerText = "";
     document.getElementById("answerText").innerText = "";
     document.getElementById("answerSection").style.display = "none";
@@ -97,7 +127,7 @@ document.getElementById("fileInput").addEventListener("change", (e) => {
 document.getElementById("resetBtn").addEventListener("click", () => {
     if (confirm("進捗をリセットして最初からやり直しますか？")) {
         if (QuizEngine.init()) {
-            //alert("リセット完了（全問復活＆シャッフル）");
+            isFirstQuestion = true; // リセット後はボタン表示に戻す
             enableButtons();
             showNextQuestion();
         } else { alert("問題集が読み込まれていません。"); }
