@@ -2,7 +2,8 @@ const Storage = {
     KEYS: {
         ALL: "all_questions",
         CURRENT: "quiz_questions",
-        FILENAME: "quiz_filename"
+        FILENAME: "quiz_filename",
+        MODE: "quiz_mode" // 追加
     },
 
     // データの保存（読み込み時）
@@ -26,5 +27,14 @@ const Storage = {
 
     getFileName() {
         return localStorage.getItem(this.KEYS.FILENAME) || "";
+    },
+
+    // モード保存・取得用
+    saveMode(mode) {
+        localStorage.setItem(this.KEYS.MODE, mode);
+    },
+
+    getMode() {
+        return localStorage.getItem(this.KEYS.MODE) || "text"; // デフォルトは画面表示
     }
 };

@@ -4,7 +4,13 @@ let countdownInterval = null;
 let charIndex = 0;
 let isFirstQuestion = true;
 let isVoiceMode = false; 
+let isAutoMode = false; 
 let currentUtterance = null;
+
+// --- 調整用パラメータ ---
+const SPEECH_RATE = 1.2;      // 読み上げ速度 (1.0が標準)
+const INTERVAL_TIME = 500;    // 自動再生時の間隔 (ms) 1000→500へ短縮
+// -----------------------
 
 window.onload = () => {
     const fileName = Storage.getFileName();
@@ -14,27 +20,35 @@ window.onload = () => {
         if (QuizEngine.questions.length > 0) {
             enableButtons();
             isFirstQuestion = true;
+            const savedMode = Storage.getMode();
+            applyMode(savedMode); 
             showNextQuestion();
         }
     }
 };
 
-// モード切替イベント
-document.getElementById("modeTextBtn").addEventListener("click", () => switchMode(false));
-document.getElementById("modeVoiceBtn").addEventListener("click", () => switchMode(true));
+document.getElementById("modeTextBtn").addEventListener("click", () => switchMode('text'));
+document.getElementById("modeVoiceBtn").addEventListener("click", () => switchMode('voice'));
+document.getElementById("modeAutoBtn").addEventListener("click", () => switchMode('auto'));
 
-function switchMode(voice) {
-    isVoiceMode = voice;
-    document.getElementById("modeVoiceBtn").style.backgroundColor = voice ? "#4CAF50" : "#777";
-    document.getElementById("modeTextBtn").style.backgroundColor = voice ? "#777" : "#4CAF50";
-    speechSynthesis.cancel(); 
+function switchMode(mode) {
+    Storage.saveMode(mode);
+    applyMode(mode);
     isFirstQuestion = true; 
     showNextQuestion();
 }
 
+function applyMode(mode) {
+    isVoiceMode = (mode === 'voice');
+    isAutoMode = (mode === 'auto');
+    document.getElementById("modeTextBtn").style.backgroundColor = (mode === 'text') ? "#4CAF50" : "#777";
+    document.getElementById("modeVoiceBtn").style.backgroundColor = (mode === 'voice') ? "#4CAF50" : "#777";
+    document.getElementById("modeAutoBtn").style.backgroundColor = (mode === 'auto') ? "#4CAF50" : "#777";
+    speechSynthesis.cancel();
+}
+
 function enableButtons() {
     document.getElementById("nextBtn").disabled = false;
-    // 初期状態（問題ボタン待ち）では早押しは無効
     document.getElementById("buzzBtn").disabled = true;
 }
 
@@ -42,36 +56,35 @@ function showNextQuestion() {
     resetUI();
     currentQ = QuizEngine.getNext();
     if (!currentQ) {
-        document.getElementById("question").innerText = "問題がありません。リセットボタンで最初からやり直せます。";
+        document.getElementById("question").innerText = "問題がありません。";
         document.getElementById("buzzBtn").disabled = true;
         return;
     }
 
-    // 問題文エリアを常に左詰めに設定
     document.getElementById("question").style.display = "flex";
     document.getElementById("question").style.justifyContent = "flex-start";
 
     if (isFirstQuestion) {
-        // 最初の「問題」ボタン表示中も早押しは無効化
         document.getElementById("buzzBtn").disabled = true;
-        document.getElementById("question").innerHTML = '<button id="startBtn" class="judgeBtn correctBtn" style="width: auto; padding: 10px 40px;">問題</button>';
+        const btnText = isAutoMode ? "自動再生を開始" : "問題";
+        document.getElementById("question").innerHTML = `<button id="startBtn" class="judgeBtn correctBtn" style="width: auto; padding: 10px 40px;">${btnText}</button>`;
         document.getElementById("startBtn").addEventListener("click", () => {
             document.getElementById("question").innerHTML = ""; 
             isFirstQuestion = false;
-            // 読み上げ開始と同時に早押しを有効化
-            document.getElementById("buzzBtn").disabled = false;
+            if (!isAutoMode) document.getElementById("buzzBtn").disabled = false;
             startTextFlow();
         });
     } else {
-        // 2問目以降（自動開始時）は有効化して開始
-        document.getElementById("buzzBtn").disabled = false;
+        if (!isAutoMode) document.getElementById("buzzBtn").disabled = false;
         startTextFlow();
     }
 }
 
 function startTextFlow() {
     charIndex = 0;
-    if (isVoiceMode) {
+    if (isAutoMode) {
+        startAutoFlow();
+    } else if (isVoiceMode) {
         startVoiceFlow();
     } else {
         startVisualFlow();
@@ -90,13 +103,11 @@ function startVisualFlow() {
 }
 
 function startVoiceFlow() {
-    // 強力なカッコ除去 (全角半角混在対応)
     const cleanedText = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
     const speakText = "問題。" + cleanedText;
-    
     currentUtterance = new SpeechSynthesisUtterance(speakText);
     currentUtterance.lang = 'ja-JP';
-    currentUtterance.rate = 1.0;
+    currentUtterance.rate = SPEECH_RATE; // 速度適用
 
     currentUtterance.onend = () => {
         if (document.getElementById("answerSection").style.display === "none") {
@@ -104,6 +115,37 @@ function startVoiceFlow() {
         }
     };
     speechSynthesis.speak(currentUtterance);
+}
+
+function startAutoFlow() {
+    document.getElementById("buzzBtn").disabled = true;
+    const cleanedText = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
+    const utterQ = new SpeechSynthesisUtterance("問題。" + cleanedText);
+    utterQ.lang = 'ja-JP';
+    utterQ.rate = SPEECH_RATE; // 速度適用
+
+    utterQ.onend = () => {
+        document.getElementById("question").innerText = currentQ.question;
+        // 問題と答えの間隔を短縮
+        setTimeout(() => {
+            if (!isAutoMode) return;
+            const utterA = new SpeechSynthesisUtterance("答え。" + currentQ.answer);
+            utterA.lang = 'ja-JP';
+            utterA.rate = SPEECH_RATE; // 速度適用
+            utterA.onstart = () => {
+                document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
+                document.getElementById("answerSection").style.display = "block";
+            };
+            utterA.onend = () => {
+                // 答えと次の問題の間隔を短縮
+                setTimeout(() => {
+                    if (isAutoMode) showNextQuestion();
+                }, INTERVAL_TIME);
+            };
+            speechSynthesis.speak(utterA);
+        }, INTERVAL_TIME);
+    };
+    speechSynthesis.speak(utterQ);
 }
 
 function stopDisplay() {
@@ -144,17 +186,15 @@ function resetUI() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
     speechSynthesis.cancel();
-    // 表示のリセットと左詰め
     document.getElementById("question").style.justifyContent = "flex-start";
     document.getElementById("question").innerText = "";
     document.getElementById("answerText").innerText = "";
     document.getElementById("answerSection").style.display = "none";
     document.getElementById("judgeButtons").style.display = "none";
     document.getElementById("showAnswerBtn").style.display = "inline-block";
-    document.getElementById("buzzBtn").disabled = false;
+    document.getElementById("buzzBtn").disabled = true;
 }
 
-// リロードなしでのCSV読み込み
 document.getElementById("fileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -165,10 +205,8 @@ document.getElementById("fileInput").addEventListener("change", (e) => {
             question: row[0] ? row[0].replace(/^"|"$/g, '') : "",
             answer: row[1] ? row[1].replace(/^"|"$/g, '') : ""
         })).filter(q => q.question !== "");
-
         Storage.saveFileName(file.name);
         Storage.saveAll(data);
-
         document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + file.name;
         QuizEngine.init(); 
         if (QuizEngine.questions.length > 0) {
