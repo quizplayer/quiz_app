@@ -25,13 +25,16 @@
     </div>
 
     <script src="js/storage.js"></script>
-    <script>
+    <script src="js/quizEngine.js"></script> <script>
         let allQuestions = [];
+        const fileNameDisplay = document.getElementById("fileNameDisplay");
+
         window.onload = () => {
             allQuestions = Storage.loadAll();
-            document.getElementById("fileNameDisplay").innerText = "現在の問題集: " + Storage.getFileName();
+            fileNameDisplay.innerText = "現在の問題集: " + Storage.getFileName();
         };
 
+        // 検索ロジック (変更なし)
         document.getElementById("searchInput").addEventListener("input", (e) => {
             const kw = e.target.value.toLowerCase();
             const list = document.getElementById("resultList");
@@ -48,26 +51,33 @@
         });
 
         document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
-// ...読み込み部分のみ抜粋...
-document.getElementById("fileInput").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        // QuizEngineはクイズ画面用なので、ここでは直接ロジックを書くか、quizEngine.jsを読み込んで使う
-        // quizEngine.jsを読み込んでいる前提:
-        const parsedRows = QuizEngine.parseCSV(event.target.result);
-        const data = parsedRows.map(row => ({
-            question: row[0] ? row[0].replace(/^"|"$/g, '') : "",
-            answer: row[1] ? row[1].replace(/^"|"$/g, '') : ""
-        })).filter(q => q.question !== "");
 
-        Storage.saveFileName(file.name);
-        Storage.saveAll(data);
-        location.reload();
-    };
-    reader.readAsText(file, "UTF-8");
-});
+        document.getElementById("fileInput").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                // QuizEngineのパース機能を利用
+                const parsedRows = QuizEngine.parseCSV(event.target.result);
+                const data = parsedRows.map(row => ({
+                    question: row[0] ? row[0].replace(/^"|"$/g, '') : "",
+                    answer: row[1] ? row[1].replace(/^"|"$/g, '') : ""
+                })).filter(q => q.question !== "");
+
+                // ストレージに保存
+                Storage.saveFileName(file.name);
+                Storage.saveAll(data);
+                
+                // 【修正箇所】メモリ上のデータと表示を即座に更新
+                allQuestions = data;
+                fileNameDisplay.innerText = "現在の問題集: " + file.name;
+                document.getElementById("searchInput").value = "";
+                document.getElementById("resultList").innerHTML = "";
+                
+                //alert("問題集を更新しました: " + file.name);
+            };
+            reader.readAsText(file, "UTF-8");
+        });
     </script>
 </body>
 </html>
