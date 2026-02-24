@@ -10,8 +10,8 @@ let currentUtterance = null;
 let autoTimer = null; 
 
 // 読み上げ速度と自動再生時の間隔
-const SPEECH_RATE = 1.0;      
-const INTERVAL_TIME = 1000;   
+const SPEECH_RATE = 1.1;      
+const INTERVAL_TIME = 500;   
 
 // バックグラウンド再生維持用の無音オーディオ
 const silentAudio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
