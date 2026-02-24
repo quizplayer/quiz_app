@@ -12,7 +12,7 @@ const SPEECH_RATE = 1.0;
 const INTERVAL_TIME = 1000;   
 // -----------------------
 
-// 【バックグラウンド対策】無音オーディオ（10秒の無音mp3）
+// 【バックグラウンド対策】無音オーディオの定義
 const silentAudio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
 silentAudio.loop = true;
 
@@ -46,30 +46,32 @@ function switchMode(mode) {
 function applyMode(mode) {
     isVoiceMode = (mode === 'voice');
     isAutoMode = (mode === 'auto');
+    
     document.getElementById("modeTextBtn").style.backgroundColor = (mode === 'text') ? "#4CAF50" : "#777";
     document.getElementById("modeVoiceBtn").style.backgroundColor = (mode === 'voice') ? "#4CAF50" : "#777";
     document.getElementById("modeAutoBtn").style.backgroundColor = (mode === 'auto') ? "#4CAF50" : "#777";
     
     speechSynthesis.cancel();
-    silentAudio.pause(); // モード切替時は一旦止める
+    silentAudio.pause(); // モード切替時に一旦停止
 }
 
-// メディアセッション更新
+// OSのメディアセンター（ロック画面等）との同期
 function updateMediaSession(title, artist) {
     if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
             title: title,
             artist: artist,
-            album: '早押しクイズ',
+            album: '早押しクイズ 自動再生',
             artwork: [{ src: 'https://dummyimage.com/512x512/4caf50/fff&text=Quiz', sizes: '512x512', type: 'image/png' }]
         });
+        
         navigator.mediaSession.setActionHandler('pause', () => {
             isAutoMode = false;
             speechSynthesis.cancel();
             silentAudio.pause();
         });
         navigator.mediaSession.setActionHandler('play', () => {
-            if(isAutoMode) startAutoFlow();
+            if (isAutoMode) startAutoFlow();
         });
     }
 }
@@ -101,9 +103,9 @@ function showNextQuestion() {
             isFirstQuestion = false;
             if (!isAutoMode) document.getElementById("buzzBtn").disabled = false;
             
-            // 【重要】ユーザーがボタンを押した瞬間に無音再生を開始（ブラウザの制限解除）
+            // 【重要】再生開始時にオーディオを動かし、OSにメディア再生中と認識させる
             if (isAutoMode || isVoiceMode) {
-                silentAudio.play().catch(e => console.log("Audio play blocked"));
+                silentAudio.play().catch(e => console.log("Audio play blocked", e));
             }
             startTextFlow();
         });
@@ -149,12 +151,12 @@ function startVoiceFlow() {
     speechSynthesis.speak(currentUtterance);
 }
 
-// 【改善版】自動再生（聞き流し）
+// 【自動再生】バックグラウンド維持ロジック
 function startAutoFlow() {
     document.getElementById("buzzBtn").disabled = true;
     
-    // 再生中であることをOSに維持させる
-    silentAudio.play().catch(() => {}); 
+    // オーディオ再生を維持
+    silentAudio.play().catch(() => {});
     updateMediaSession("問題読み上げ中", currentQ.question.substring(0, 30));
 
     const cleanedText = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
@@ -163,10 +165,9 @@ function startAutoFlow() {
     utterQ.rate = SPEECH_RATE;
 
     utterQ.onend = () => {
-        // UI更新（バックグラウンドだと見えませんが一応実行）
         document.getElementById("question").innerText = currentQ.question;
         
-        // 問題と答えの間の待機
+        // setTimeoutをOSに無視させないための待機処理
         setTimeout(() => {
             if (!isAutoMode) return;
             
@@ -182,7 +183,6 @@ function startAutoFlow() {
             };
             
             utterA.onend = () => {
-                // 答えと次の問題の間の待機
                 setTimeout(() => {
                     if (isAutoMode) showNextQuestion();
                 }, INTERVAL_TIME);
@@ -240,7 +240,7 @@ function resetUI() {
     document.getElementById("buzzBtn").disabled = true;
 }
 
-// CSV読み込み
+// --- 以下、ファイル読み込み関連（変更なし） ---
 document.getElementById("fileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
