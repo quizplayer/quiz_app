@@ -8,12 +8,12 @@
 </head>
 <body>
     <header>
-        
+        <h1>早押しクイズ</h1>
         <div style="display: flex; gap: 5px;">
-            <button id="modeTextBtn" class="smallBtn" style="background-color: #4CAF50;">画面表示</button>
-            <button id="modeVoiceBtn" class="smallBtn" style="background-color: #777;">音声再生</button>
-            <button id="modeAutoBtn" class="smallBtn" style="background-color: #777;">自動再生</button>
-            <button onclick="location.href='search.html'" class="smallBtn">問題検索</button>
+            <button id="modeTextBtn" class="smallBtn">画面表示</button>
+            <button id="modeVoiceBtn" class="smallBtn">音声再生</button>
+            <button id="modeAutoBtn" class="smallBtn">自動再生</button>
+            <button id="openSearchBtn" class="smallBtn">問題検索</button>
         </div>
     </header>
 
@@ -45,6 +45,14 @@
     <div id="controlPanel">
         <button id="nextBtn" disabled>次の問題</button>
         <button id="buzzBtn" disabled>早押し！</button>
+    </div>
+
+    <div id="searchOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; overflow-y:auto;">
+        <div style="position:sticky; top:0; width:100%; background:#f8f8f8; padding:10px; display:flex; gap:10px; align-items:center; border-bottom:1px solid #ccc; box-sizing: border-box;">
+            <button id="closeSearchBtn" class="smallBtn" style="background:#555;">閉じる</button>
+            <input type="text" id="searchInput" placeholder="問題・答えを検索..." style="flex:1; padding:10px; border-radius:5px; border:1px solid #ccc; font-size:16px;">
+        </div>
+        <div id="searchResults" style="padding: 20px;"></div>
     </div>
 
     <script src="js/storage.js"></script>
