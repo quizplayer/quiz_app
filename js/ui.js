@@ -5,12 +5,15 @@ let charIndex = 0;
 let isFirstQuestion = true;
 let isVoiceMode = false; 
 let isAutoMode = false; 
+let isPaused = false; 
 let currentUtterance = null;
+let autoTimer = null; 
 
+// 読み上げ速度と自動再生時の間隔
 const SPEECH_RATE = 1.0;      
 const INTERVAL_TIME = 1000;   
 
-// バックグラウンド生存用
+// バックグラウンド再生維持用の無音オーディオ
 const silentAudio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
 silentAudio.loop = true;
 
@@ -27,10 +30,33 @@ window.onload = () => {
             showNextQuestion();
         }
     }
-    initSearch(); // 検索機能の初期化
+    initSearch();
 };
 
-// --- モード制御 ---
+/**
+ * モード切替とUIの初期化
+ */
+function applyMode(mode) {
+    isVoiceMode = (mode === 'voice');
+    isAutoMode = (mode === 'auto');
+    isPaused = false;
+    
+    document.getElementById("modeTextBtn").style.backgroundColor = (mode === 'text') ? "#4CAF50" : "#777";
+    document.getElementById("modeVoiceBtn").style.backgroundColor = (mode === 'voice') ? "#4CAF50" : "#777";
+    document.getElementById("modeAutoBtn").style.backgroundColor = (mode === 'auto') ? "#4CAF50" : "#777";
+    
+    // 一時停止・早押しボタンをリセット
+    document.getElementById("pauseBtn").style.display = "none";
+    document.getElementById("buzzBtn").style.display = isAutoMode ? "none" : "inline-block";
+    
+    // 自動再生モードなら「解答を表示」ボタンを非表示
+    document.getElementById("showAnswerBtn").style.display = isAutoMode ? "none" : "inline-block";
+
+    speechSynthesis.cancel();
+    silentAudio.pause();
+    clearTimeout(autoTimer);
+}
+
 function switchMode(mode) {
     Storage.saveMode(mode); 
     applyMode(mode);        
@@ -38,36 +64,48 @@ function switchMode(mode) {
     showNextQuestion();
 }
 
-function applyMode(mode) {
-    isVoiceMode = (mode === 'voice');
-    isAutoMode = (mode === 'auto');
-    document.getElementById("modeTextBtn").style.backgroundColor = (mode === 'text') ? "#4CAF50" : "#777";
-    document.getElementById("modeVoiceBtn").style.backgroundColor = (mode === 'voice') ? "#4CAF50" : "#777";
-    document.getElementById("modeAutoBtn").style.backgroundColor = (mode === 'auto') ? "#4CAF50" : "#777";
-    speechSynthesis.cancel();
-    silentAudio.pause();
-}
+/**
+ * 一時停止 / 再開（続きから読み上げ）
+ */
+function togglePause() {
+    if (!isAutoMode) return;
+    
+    if (!isPaused) {
+        isPaused = true;
+        speechSynthesis.pause(); // 続きから再生するためにpauseを使用
+        silentAudio.pause();
+        if (autoTimer) clearTimeout(autoTimer);
 
-// --- メディアセッション (バックグラウンド維持) ---
-function updateMediaSession(title, artist) {
-    if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: title,
-            artist: artist,
-            album: '早押しクイズ',
-            artwork: [{ src: 'https://dummyimage.com/512x512/4caf50/fff&text=Quiz', sizes: '512x512', type: 'image/png' }]
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-            isAutoMode = false;
-            speechSynthesis.cancel();
-            silentAudio.pause();
-        });
+        document.getElementById("pauseBtn").innerText = "再開";
+        document.getElementById("pauseBtn").style.backgroundColor = "#5cb85c";
+    } else {
+        isPaused = false;
+        document.getElementById("pauseBtn").innerText = "一時停止";
+        document.getElementById("pauseBtn").style.backgroundColor = "#f0ad4e";
+        
+        silentAudio.play().catch(() => {});
+        
+        if (speechSynthesis.paused) {
+            speechSynthesis.resume(); // 一時停止した場所から再開
+        } else {
+            // キューが消えている場合のセーフティ
+            startAutoFlow();
+        }
     }
 }
 
-// --- クイズロジック ---
+/**
+ * 問題の表示とボタン制御
+ */
 function showNextQuestion() {
     resetUI();
+    isPaused = false;
+
+    // 問題遷移時、操作ボタンは一旦非表示
+    document.getElementById("pauseBtn").style.display = "none";
+    document.getElementById("buzzBtn").style.display = "none";
+    document.getElementById("showAnswerBtn").style.display = isAutoMode ? "none" : "inline-block";
+
     currentQ = QuizEngine.getNext();
     if (!currentQ) {
         document.getElementById("question").innerText = "問題がありません。";
@@ -80,14 +118,80 @@ function showNextQuestion() {
         document.getElementById("startBtn").addEventListener("click", () => {
             document.getElementById("question").innerHTML = ""; 
             isFirstQuestion = false;
+            
+            if (isAutoMode) {
+                document.getElementById("pauseBtn").style.display = "inline-block";
+                document.getElementById("buzzBtn").style.display = "none";
+                document.getElementById("showAnswerBtn").style.display = "none";
+            } else {
+                document.getElementById("pauseBtn").style.display = "none";
+                document.getElementById("buzzBtn").style.display = "inline-block";
+                document.getElementById("buzzBtn").disabled = false;
+                document.getElementById("showAnswerBtn").style.display = "inline-block";
+            }
+
             if (isAutoMode || isVoiceMode) silentAudio.play().catch(() => {});
             startTextFlow();
         });
     } else {
+        // 2問目以降
+        if (isAutoMode) {
+            document.getElementById("pauseBtn").style.display = "inline-block";
+            document.getElementById("buzzBtn").style.display = "none";
+            document.getElementById("showAnswerBtn").style.display = "none";
+        } else {
+            document.getElementById("pauseBtn").style.display = "none";
+            document.getElementById("buzzBtn").style.display = "inline-block";
+            document.getElementById("buzzBtn").disabled = false;
+            document.getElementById("showAnswerBtn").style.display = "inline-block";
+        }
         startTextFlow();
     }
 }
 
+/**
+ * 自動再生フロー
+ */
+function startAutoFlow() {
+    if (isPaused) return;
+    
+    silentAudio.play().catch(() => {});
+    updateMediaSession("問題読み上げ中", currentQ.question.substring(0, 30));
+    
+    const cleaned = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
+    const utterQ = new SpeechSynthesisUtterance("問題。" + cleaned);
+    utterQ.lang = 'ja-JP';
+    utterQ.rate = SPEECH_RATE;
+
+    utterQ.onend = () => {
+        if (isPaused) return; 
+        
+        document.getElementById("question").innerText = currentQ.question;
+        autoTimer = setTimeout(() => {
+            if (!isAutoMode || isPaused) return;
+            
+            updateMediaSession("答え読み上げ中", currentQ.answer);
+            const utterA = new SpeechSynthesisUtterance("答え。" + currentQ.answer);
+            utterA.lang = 'ja-JP';
+            utterA.rate = SPEECH_RATE;
+            
+            utterA.onstart = () => {
+                document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
+                document.getElementById("answerSection").style.display = "block";
+            };
+            
+            utterA.onend = () => {
+                autoTimer = setTimeout(() => { 
+                    if (isAutoMode && !isPaused) showNextQuestion(); 
+                }, INTERVAL_TIME);
+            };
+            speechSynthesis.speak(utterA);
+        }, INTERVAL_TIME);
+    };
+    speechSynthesis.speak(utterQ);
+}
+
+// --- 通常再生・視覚フロー ---
 function startTextFlow() {
     charIndex = 0;
     if (isAutoMode) startAutoFlow();
@@ -96,7 +200,6 @@ function startTextFlow() {
 }
 
 function startVisualFlow() {
-    document.getElementById("buzzBtn").disabled = false;
     displayInterval = setInterval(() => {
         if (charIndex >= currentQ.question.length) {
             stopDisplay();
@@ -108,7 +211,6 @@ function startVisualFlow() {
 }
 
 function startVoiceFlow() {
-    document.getElementById("buzzBtn").disabled = false;
     const cleaned = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
     currentUtterance = new SpeechSynthesisUtterance("問題。" + cleaned);
     currentUtterance.lang = 'ja-JP';
@@ -117,34 +219,6 @@ function startVoiceFlow() {
         if (document.getElementById("answerSection").style.display === "none") stopDisplay();
     };
     speechSynthesis.speak(currentUtterance);
-}
-
-function startAutoFlow() {
-    silentAudio.play().catch(() => {});
-    updateMediaSession("自動再生中", currentQ.question.substring(0, 30));
-    const cleaned = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
-    const utterQ = new SpeechSynthesisUtterance("問題。" + cleaned);
-    utterQ.lang = 'ja-JP';
-    utterQ.rate = SPEECH_RATE;
-
-    utterQ.onend = () => {
-        document.getElementById("question").innerText = currentQ.question;
-        setTimeout(() => {
-            if (!isAutoMode) return;
-            updateMediaSession("答え読み上げ中", currentQ.answer);
-            const utterA = new SpeechSynthesisUtterance("答え。" + currentQ.answer);
-            utterA.lang = 'ja-JP';
-            utterA.onstart = () => {
-                document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
-                document.getElementById("answerSection").style.display = "block";
-            };
-            utterA.onend = () => {
-                setTimeout(() => { if (isAutoMode) showNextQuestion(); }, INTERVAL_TIME);
-            };
-            speechSynthesis.speak(utterA);
-        }, INTERVAL_TIME);
-    };
-    speechSynthesis.speak(utterQ);
 }
 
 function stopDisplay() {
@@ -180,34 +254,47 @@ function revealAnswer() {
 function resetUI() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
+    clearTimeout(autoTimer);
     speechSynthesis.cancel();
     document.getElementById("question").innerText = "";
     document.getElementById("answerText").innerText = "";
     document.getElementById("answerSection").style.display = "none";
     document.getElementById("judgeButtons").style.display = "none";
-    document.getElementById("showAnswerBtn").style.display = "inline-block";
-    document.getElementById("buzzBtn").disabled = true;
+    // 解答表示ボタンの初期表示は applyMode が制御
 }
 
 function enableButtons() {
     document.getElementById("nextBtn").disabled = false;
 }
 
-// --- 統合された検索ロジック ---
+/**
+ * ロック画面等のメディア制御連携
+ */
+function updateMediaSession(title, artist) {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: title, artist: artist, album: '早押しクイズ',
+            artwork: [{ src: 'https://dummyimage.com/512x512/4caf50/fff&text=Quiz', sizes: '512x512', type: 'image/png' }]
+        });
+        navigator.mediaSession.setActionHandler('pause', () => togglePause());
+        navigator.mediaSession.setActionHandler('play', () => togglePause());
+    }
+}
+
+/**
+ * 検索オーバーレイの初期化
+ */
 function initSearch() {
     const overlay = document.getElementById("searchOverlay");
     const input = document.getElementById("searchInput");
     const results = document.getElementById("searchResults");
-
     document.getElementById("openSearchBtn").addEventListener("click", () => {
         overlay.style.display = "block";
         input.focus();
     });
-
     document.getElementById("closeSearchBtn").addEventListener("click", () => {
         overlay.style.display = "none";
     });
-
     input.addEventListener("input", () => {
         const query = input.value.toLowerCase();
         const all = Storage.loadAll();
@@ -222,10 +309,11 @@ function initSearch() {
     });
 }
 
-// イベントリスナー登録
+// ボタンイベントの紐付け
 document.getElementById("modeTextBtn").addEventListener("click", () => switchMode('text'));
 document.getElementById("modeVoiceBtn").addEventListener("click", () => switchMode('voice'));
 document.getElementById("modeAutoBtn").addEventListener("click", () => switchMode('auto'));
+document.getElementById("pauseBtn").addEventListener("click", togglePause);
 document.getElementById("loadBtn").addEventListener("click", () => document.getElementById("fileInput").click());
 document.getElementById("buzzBtn").addEventListener("click", stopDisplay);
 document.getElementById("showAnswerBtn").addEventListener("click", revealAnswer);
@@ -234,6 +322,7 @@ document.getElementById("correctBtn").addEventListener("click", showNextQuestion
 document.getElementById("retry1Btn").addEventListener("click", () => { QuizEngine.retry(currentQ, 0); showNextQuestion(); });
 document.getElementById("retry10Btn").addEventListener("click", () => { QuizEngine.retry(currentQ, 10); showNextQuestion(); });
 
+// CSVファイル読み込み処理
 document.getElementById("fileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -258,7 +347,7 @@ document.getElementById("fileInput").addEventListener("change", (e) => {
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
-    if (confirm("リセットしますか？")) {
+    if (confirm("進捗をリセットして最初からやり直しますか？")) {
         if (QuizEngine.init()) { isFirstQuestion = true; showNextQuestion(); }
     }
 });
