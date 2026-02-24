@@ -1,5 +1,6 @@
 const QuizEngine = {
     questions: [],
+    totalCount: 0, // 追加：読み込み時の総問題数
 
     // セル内改行対応パース
     parseCSV(text) {
@@ -41,6 +42,7 @@ const QuizEngine = {
         const all = Storage.loadAll();
         if (all.length > 0) {
             this.questions = this.shuffle([...all]);
+            this.totalCount = this.questions.length; // 総数を保存
             Storage.saveCurrentProgress(this.questions);
             return true;
         }
@@ -49,6 +51,11 @@ const QuizEngine = {
 
     getNext() {
         return this.questions.length === 0 ? null : this.questions.shift();
+    },
+
+    // 現在の進行度（何問解いたか）を計算して返す
+    getCurrentNumber() {
+        return this.totalCount - this.questions.length;
     },
 
     retry(questionObj, offset) {

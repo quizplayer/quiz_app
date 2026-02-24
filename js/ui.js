@@ -100,7 +100,13 @@ function togglePause() {
 function showNextQuestion() {
     resetUI();
     isPaused = false;
-
+    
+    // 進捗表示の更新
+    const currentNum = QuizEngine.getCurrentNumber() + 1; // 0始まりなので+1
+    const total = QuizEngine.totalCount;
+    if (total > 0) {
+        document.getElementById("progressDisplay").innerText = `第 ${currentNum} 問 / 全 ${total} 問`;
+    }
     // ボタンの初期状態をリセット
     const pauseBtn = document.getElementById("pauseBtn");
     pauseBtn.innerText = "一時停止";

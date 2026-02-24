@@ -8,7 +8,6 @@
 </head>
 <body>
     <header>
-        
         <div style="display: flex; gap: 5px;">
             <button id="modeTextBtn" class="smallBtn">画面表示</button>
             <button id="modeVoiceBtn" class="smallBtn">音声再生</button>
@@ -22,7 +21,10 @@
             <button id="loadBtn" class="smallBtn">問題集読み込み</button>
             <button id="resetBtn" class="smallBtn">リセット</button>
         </div>
-        <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-bottom: 20px;"></div>
+        <div id="fileNameDisplay" style="font-size: 0.8em; color: #666; margin-bottom: 5px;"></div>
+        
+        <div id="progressDisplay" style="font-size: 0.9em; font-weight: bold; color: #2196F3; margin-bottom: 20px;"></div>
+        
         <input type="file" id="fileInput" accept=".csv" style="display:none;">
 
         <h2 id="question"></h2>
