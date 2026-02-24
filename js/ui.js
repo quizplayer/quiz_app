@@ -8,8 +8,8 @@ let isAutoMode = false;
 let currentUtterance = null;
 
 // --- 調整用パラメータ ---
-const SPEECH_RATE = 1.0;      // 読み上げ速度 (1.0が標準)
-const INTERVAL_TIME = 500;    // 自動再生時の間隔 (ms) 1000→500へ短縮
+const SPEECH_RATE = 1.0;      
+const INTERVAL_TIME = 1000;   
 // -----------------------
 
 window.onload = () => {
@@ -27,13 +27,14 @@ window.onload = () => {
     }
 };
 
+// モード切替イベント
 document.getElementById("modeTextBtn").addEventListener("click", () => switchMode('text'));
 document.getElementById("modeVoiceBtn").addEventListener("click", () => switchMode('voice'));
 document.getElementById("modeAutoBtn").addEventListener("click", () => switchMode('auto'));
 
 function switchMode(mode) {
-    Storage.saveMode(mode);
-    applyMode(mode);
+    Storage.saveMode(mode); 
+    applyMode(mode);        
     isFirstQuestion = true; 
     showNextQuestion();
 }
@@ -45,6 +46,23 @@ function applyMode(mode) {
     document.getElementById("modeVoiceBtn").style.backgroundColor = (mode === 'voice') ? "#4CAF50" : "#777";
     document.getElementById("modeAutoBtn").style.backgroundColor = (mode === 'auto') ? "#4CAF50" : "#777";
     speechSynthesis.cancel();
+}
+
+// 【新規】メディアセッション（バックグラウンド維持）更新用
+function updateMediaSession(title, artist) {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: title,
+            artist: artist,
+            album: '早押しクイズ 自動再生モード',
+            artwork: [{ src: 'https://dummyimage.com/512x512/4caf50/fff&text=Quiz', sizes: '512x512', type: 'image/png' }]
+        });
+        // ロック画面からの停止操作に対応
+        navigator.mediaSession.setActionHandler('pause', () => {
+            speechSynthesis.cancel();
+            isAutoMode = false;
+        });
+    }
 }
 
 function enableButtons() {
@@ -107,8 +125,7 @@ function startVoiceFlow() {
     const speakText = "問題。" + cleanedText;
     currentUtterance = new SpeechSynthesisUtterance(speakText);
     currentUtterance.lang = 'ja-JP';
-    currentUtterance.rate = SPEECH_RATE; // 速度適用
-
+    currentUtterance.rate = SPEECH_RATE;
     currentUtterance.onend = () => {
         if (document.getElementById("answerSection").style.display === "none") {
             stopDisplay();
@@ -119,25 +136,31 @@ function startVoiceFlow() {
 
 function startAutoFlow() {
     document.getElementById("buzzBtn").disabled = true;
+    
+    // バックグラウンド維持用の通知をセット
+    updateMediaSession("問題の読み上げ中...", currentQ.question.substring(0, 30));
+
     const cleanedText = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
     const utterQ = new SpeechSynthesisUtterance("問題。" + cleanedText);
     utterQ.lang = 'ja-JP';
-    utterQ.rate = SPEECH_RATE; // 速度適用
+    utterQ.rate = SPEECH_RATE;
 
     utterQ.onend = () => {
         document.getElementById("question").innerText = currentQ.question;
-        // 問題と答えの間隔を短縮
         setTimeout(() => {
             if (!isAutoMode) return;
+            
+            // 解答開始時に通知を更新
+            updateMediaSession("答えの読み上げ中...", currentQ.answer);
+
             const utterA = new SpeechSynthesisUtterance("答え。" + currentQ.answer);
             utterA.lang = 'ja-JP';
-            utterA.rate = SPEECH_RATE; // 速度適用
+            utterA.rate = SPEECH_RATE;
             utterA.onstart = () => {
                 document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
                 document.getElementById("answerSection").style.display = "block";
             };
             utterA.onend = () => {
-                // 答えと次の問題の間隔を短縮
                 setTimeout(() => {
                     if (isAutoMode) showNextQuestion();
                 }, INTERVAL_TIME);
@@ -195,6 +218,7 @@ function resetUI() {
     document.getElementById("buzzBtn").disabled = true;
 }
 
+// CSV読み込み
 document.getElementById("fileInput").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
