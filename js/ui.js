@@ -10,8 +10,8 @@ let currentUtterance = null;
 let autoTimer = null; 
 
 // 読み上げ速度と自動再生時の間隔
-const SPEECH_RATE = 1.1;      
-const INTERVAL_TIME = 500;   
+const SPEECH_RATE = 1.0;      
+const INTERVAL_TIME = 1000;   
 
 // バックグラウンド再生維持用の無音オーディオ
 const silentAudio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
@@ -47,6 +47,7 @@ function applyMode(mode) {
     
     // 一時停止・早押しボタンをリセット
     document.getElementById("pauseBtn").style.display = "none";
+    document.getElementById("pauseBtn").disabled = false;
     document.getElementById("buzzBtn").style.display = isAutoMode ? "none" : "inline-block";
     
     // 自動再生モードなら「解答を表示」ボタンを非表示
@@ -54,7 +55,7 @@ function applyMode(mode) {
 
     speechSynthesis.cancel();
     silentAudio.pause();
-    clearTimeout(autoTimer);
+    if (autoTimer) clearTimeout(autoTimer);
 }
 
 function switchMode(mode) {
@@ -65,14 +66,14 @@ function switchMode(mode) {
 }
 
 /**
- * 一時停止 / 再開（続きから読み上げ）
+ * 一時停止 / 再開
  */
 function togglePause() {
     if (!isAutoMode) return;
     
     if (!isPaused) {
         isPaused = true;
-        speechSynthesis.pause(); // 続きから再生するためにpauseを使用
+        speechSynthesis.pause(); 
         silentAudio.pause();
         if (autoTimer) clearTimeout(autoTimer);
 
@@ -86,9 +87,8 @@ function togglePause() {
         silentAudio.play().catch(() => {});
         
         if (speechSynthesis.paused) {
-            speechSynthesis.resume(); // 一時停止した場所から再開
+            speechSynthesis.resume();
         } else {
-            // キューが消えている場合のセーフティ
             startAutoFlow();
         }
     }
@@ -101,8 +101,13 @@ function showNextQuestion() {
     resetUI();
     isPaused = false;
 
-    // 問題遷移時、操作ボタンは一旦非表示
-    document.getElementById("pauseBtn").style.display = "none";
+    // ボタンの初期状態をリセット
+    const pauseBtn = document.getElementById("pauseBtn");
+    pauseBtn.innerText = "一時停止";
+    pauseBtn.style.backgroundColor = "#f0ad4e";
+    pauseBtn.disabled = false;
+    pauseBtn.style.display = "none";
+
     document.getElementById("buzzBtn").style.display = "none";
     document.getElementById("showAnswerBtn").style.display = isAutoMode ? "none" : "inline-block";
 
@@ -121,29 +126,20 @@ function showNextQuestion() {
             
             if (isAutoMode) {
                 document.getElementById("pauseBtn").style.display = "inline-block";
-                document.getElementById("buzzBtn").style.display = "none";
-                document.getElementById("showAnswerBtn").style.display = "none";
             } else {
-                document.getElementById("pauseBtn").style.display = "none";
                 document.getElementById("buzzBtn").style.display = "inline-block";
                 document.getElementById("buzzBtn").disabled = false;
-                document.getElementById("showAnswerBtn").style.display = "inline-block";
             }
 
             if (isAutoMode || isVoiceMode) silentAudio.play().catch(() => {});
             startTextFlow();
         });
     } else {
-        // 2問目以降
         if (isAutoMode) {
             document.getElementById("pauseBtn").style.display = "inline-block";
-            document.getElementById("buzzBtn").style.display = "none";
-            document.getElementById("showAnswerBtn").style.display = "none";
         } else {
-            document.getElementById("pauseBtn").style.display = "none";
             document.getElementById("buzzBtn").style.display = "inline-block";
             document.getElementById("buzzBtn").disabled = false;
-            document.getElementById("showAnswerBtn").style.display = "inline-block";
         }
         startTextFlow();
     }
@@ -151,10 +147,14 @@ function showNextQuestion() {
 
 /**
  * 自動再生フロー
+ * 問題読み上げ終了から答え開始までの間、一時停止を無効化する
  */
 function startAutoFlow() {
     if (isPaused) return;
     
+    const pauseBtn = document.getElementById("pauseBtn");
+    pauseBtn.disabled = false; // 問題読み上げ中は押せる
+
     silentAudio.play().catch(() => {});
     updateMediaSession("問題読み上げ中", currentQ.question.substring(0, 30));
     
@@ -166,7 +166,10 @@ function startAutoFlow() {
     utterQ.onend = () => {
         if (isPaused) return; 
         
-        document.getElementById("question").innerText = currentQ.question;
+        // 【修正】問題文読み上げ終了時に一時停止を無効化
+        pauseBtn.disabled = true;
+        pauseBtn.style.opacity = "0.5";
+
         autoTimer = setTimeout(() => {
             if (!isAutoMode || isPaused) return;
             
@@ -176,6 +179,11 @@ function startAutoFlow() {
             utterA.rate = SPEECH_RATE;
             
             utterA.onstart = () => {
+                // 【修正】答えの読み上げが始まったら一時停止を再度有効化
+                pauseBtn.disabled = false;
+                pauseBtn.style.opacity = "1";
+
+                document.getElementById("question").innerText = currentQ.question;
                 document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
                 document.getElementById("answerSection").style.display = "block";
             };
@@ -254,13 +262,12 @@ function revealAnswer() {
 function resetUI() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
-    clearTimeout(autoTimer);
+    if (autoTimer) clearTimeout(autoTimer);
     speechSynthesis.cancel();
     document.getElementById("question").innerText = "";
     document.getElementById("answerText").innerText = "";
     document.getElementById("answerSection").style.display = "none";
     document.getElementById("judgeButtons").style.display = "none";
-    // 解答表示ボタンの初期表示は applyMode が制御
 }
 
 function enableButtons() {
