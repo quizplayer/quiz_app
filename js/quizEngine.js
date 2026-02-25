@@ -41,18 +41,17 @@ const QuizEngine = {
         const all = Storage.loadAll();
         if (all.length > 0) {
             const isShuffle = Storage.getShuffleSetting();
-            let processedQuestions = [...all];
+            let processed = [...all];
 
             if (isShuffle) {
-                processedQuestions = this.shuffle(processedQuestions);
+                processed = this.shuffle(processed);
             } else {
-                const startIndex = Storage.getStartIndex();
-                const startAt = Math.max(0, startIndex - 1);
-                processedQuestions = processedQuestions.slice(startAt);
+                const start = Math.max(0, Storage.getStartIndex() - 1);
+                processed = processed.slice(start);
             }
 
-            this.questions = processedQuestions;
-            this.totalCount = all.length; 
+            this.questions = processed;
+            this.totalCount = all.length;
             Storage.saveCurrentProgress(this.questions);
             return true;
         }
@@ -64,7 +63,6 @@ const QuizEngine = {
     },
 
     getCurrentNumber() {
-        // 全体の数から「残り」を引くことで、現在の絶対位置（1番目〜）を出す
         return this.totalCount - this.questions.length;
     },
 

@@ -6,11 +6,6 @@ let isFirstQuestion = true;
 let isVoiceMode = false; 
 let isAutoMode = false; 
 let isPaused = false; 
-let currentUtterance = null;
-let autoTimer = null; 
-
-const SPEECH_RATE = 1.0;      
-const INTERVAL_TIME = 1000;   
 
 const silentAudio = new Audio("https://github.com/anars/blank-audio/raw/master/10-seconds-of-silence.mp3");
 silentAudio.loop = true;
@@ -23,22 +18,32 @@ window.onload = () => {
         if (QuizEngine.questions.length > 0) {
             enableButtons();
             isFirstQuestion = true;
-            const savedMode = Storage.getMode();
-            applyMode(savedMode); 
+            applyMode(Storage.getMode()); 
             showNextQuestion();
         }
     }
 
+    // メニュー開閉
+    const sideMenu = document.getElementById("sideMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+    document.getElementById("menuOpenBtn").addEventListener("click", () => {
+        sideMenu.classList.add("open");
+        menuOverlay.classList.add("show");
+    });
+    const closeMenu = () => {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+    };
+    document.getElementById("menuCloseBtn").addEventListener("click", closeMenu);
+    menuOverlay.addEventListener("click", closeMenu);
+
+    // 開始位置入力
     const startInput = document.getElementById("startIndexInput");
     startInput.value = Storage.getStartIndex();
-    
-    // 【修正】入力が変わった瞬間に問題を再セットアップする
     startInput.addEventListener("change", (e) => {
         let val = parseInt(e.target.value);
         if (isNaN(val) || val < 1) val = 1;
         Storage.saveStartIndex(val);
-        
-        // リセットボタンを押さなくても、ここですぐに反映
         if (QuizEngine.init()) {
             isFirstQuestion = true;
             showNextQuestion();
@@ -53,10 +58,8 @@ function updateShuffleBtnUI() {
     const isShuffle = Storage.getShuffleSetting();
     const btn = document.getElementById("shuffleToggleBtn");
     const startInput = document.getElementById("startIndexInput");
-    
     btn.innerText = isShuffle ? "シャッフル: ON" : "シャッフル: OFF";
     btn.style.backgroundColor = isShuffle ? "#9C27B0" : "#607D8B";
-    
     startInput.disabled = isShuffle;
     document.getElementById("startIndexContainer").style.opacity = isShuffle ? "0.5" : "1";
 }
@@ -70,61 +73,45 @@ function applyMode(mode) {
     document.getElementById("modeVoiceBtn").style.backgroundColor = (mode === 'voice') ? "#4CAF50" : "#777";
     document.getElementById("modeAutoBtn").style.backgroundColor = (mode === 'auto') ? "#4CAF50" : "#777";
     
-    const pauseBtn = document.getElementById("pauseBtn");
-    pauseBtn.style.display = "none";
-    pauseBtn.innerText = "一時停止";
-    pauseBtn.style.backgroundColor = "#f0ad4e";
-    pauseBtn.disabled = false;
-    pauseBtn.style.opacity = "1";
-
+    updatePauseBtnUI(true);
+    document.getElementById("pauseBtn").style.display = "none";
     document.getElementById("buzzBtn").style.display = isAutoMode ? "none" : "inline-block";
     document.getElementById("showAnswerBtn").style.display = isAutoMode ? "none" : "inline-block";
     
-    speechSynthesis.cancel();
+    AutoFlowManager.stop();
 }
 
-function switchMode(mode) {
-    Storage.saveMode(mode); 
-    applyMode(mode);        
-    isFirstQuestion = true; 
-    showNextQuestion();
+function updatePauseBtnUI(enabled, label = "一時停止", color = "#f0ad4e") {
+    const btn = document.getElementById("pauseBtn");
+    btn.disabled = !enabled;
+    btn.style.opacity = enabled ? "1" : "0.5";
+    btn.innerText = label;
+    btn.style.backgroundColor = color;
 }
 
 function togglePause() {
     if (!isAutoMode) return;
-    const pauseBtn = document.getElementById("pauseBtn");
-
     if (!isPaused) {
         isPaused = true;
-        speechSynthesis.pause(); 
-        if (autoTimer) clearTimeout(autoTimer);
-        pauseBtn.innerText = "再開";
-        pauseBtn.style.backgroundColor = "#5cb85c";
+        AudioPlayer.pause();
+        if (AutoFlowManager.timer) clearTimeout(AutoFlowManager.timer);
+        updatePauseBtnUI(true, "再開", "#5cb85c");
     } else {
         isPaused = false;
-        pauseBtn.innerText = "一時停止";
-        pauseBtn.style.backgroundColor = "#f0ad4e";
-        if (speechSynthesis.paused) speechSynthesis.resume();
-        else startAutoFlow();
+        updatePauseBtnUI(true, "一時停止", "#f0ad4e");
+        if (AudioPlayer.isPaused()) AudioPlayer.resume();
+        else startCurrentFlow();
     }
 }
 
 function showNextQuestion() {
     resetUI();
     isPaused = false;
-    
     const currentNum = QuizEngine.getCurrentNumber() + 1;
-    const total = QuizEngine.totalCount;
-    if (total > 0) {
-        document.getElementById("progressDisplay").innerText = `第 ${currentNum} 問 / 全 ${total} 問`;
-    }
+    document.getElementById("progressDisplay").innerText = `第 ${currentNum} 問 / 全 ${QuizEngine.totalCount} 問`;
 
-    const pauseBtn = document.getElementById("pauseBtn");
-    pauseBtn.innerText = "一時停止";
-    pauseBtn.style.backgroundColor = "#f0ad4e";
-    pauseBtn.disabled = false;
-    pauseBtn.style.opacity = "1";
-    pauseBtn.style.display = "none";
+    updatePauseBtnUI(true);
+    document.getElementById("pauseBtn").style.display = "none";
 
     currentQ = QuizEngine.getNext();
     if (!currentQ) {
@@ -137,93 +124,52 @@ function showNextQuestion() {
         document.getElementById("question").innerHTML = `<button id="startBtn" class="judgeBtn correctBtn" style="width: auto; padding: 10px 40px;">${btnText}</button>`;
         document.getElementById("startBtn").addEventListener("click", () => {
             isFirstQuestion = false;
-            if (isAutoMode) pauseBtn.style.display = "inline-block";
-            else {
-                document.getElementById("buzzBtn").style.display = "inline-block";
-                document.getElementById("buzzBtn").disabled = false;
-            }
+            if (isAutoMode) document.getElementById("pauseBtn").style.display = "inline-block";
+            else document.getElementById("buzzBtn").disabled = false;
             if (isAutoMode || isVoiceMode) silentAudio.play().catch(() => {});
-            startTextFlow();
+            startCurrentFlow();
         });
     } else {
-        if (isAutoMode) pauseBtn.style.display = "inline-block";
-        else {
-            document.getElementById("buzzBtn").style.display = "inline-block";
-            document.getElementById("buzzBtn").disabled = false;
-        }
-        startTextFlow();
+        if (isAutoMode) document.getElementById("pauseBtn").style.display = "inline-block";
+        else document.getElementById("buzzBtn").disabled = false;
+        startCurrentFlow();
     }
 }
 
-function startAutoFlow() {
-    if (isPaused) return;
-    const pauseBtn = document.getElementById("pauseBtn");
-    pauseBtn.disabled = false;
-    pauseBtn.style.opacity = "1";
-    pauseBtn.innerText = "一時停止";
-
-    const cleaned = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
-    const utterQ = new SpeechSynthesisUtterance("問題。" + cleaned);
-    utterQ.lang = 'ja-JP';
-    utterQ.rate = SPEECH_RATE;
-
-    utterQ.onend = () => {
-        if (isPaused) return;
-        
-        pauseBtn.disabled = true;
-        pauseBtn.style.opacity = "0.5";
-        pauseBtn.innerText = "待機中...";
-
-        autoTimer = setTimeout(() => {
-            if (!isAutoMode || isPaused) return;
-            const utterA = new SpeechSynthesisUtterance("答え。" + currentQ.answer);
-            utterA.lang = 'ja-JP';
-            utterA.onstart = () => {
-                pauseBtn.disabled = false;
-                pauseBtn.style.opacity = "1";
-                pauseBtn.innerText = "一時停止";
-
+function startCurrentFlow() {
+    charIndex = 0;
+    document.getElementById("question").innerText = "";
+    if (isAutoMode) {
+        AutoFlowManager.start(currentQ, 
+            () => { // 答え表示開始
+                updatePauseBtnUI(true);
                 document.getElementById("question").innerText = currentQ.question;
                 document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
                 document.getElementById("answerSection").style.display = "block";
-            };
-            utterA.onend = () => {
-                autoTimer = setTimeout(() => { if (isAutoMode && !isPaused) showNextQuestion(); }, INTERVAL_TIME);
-            };
-            speechSynthesis.speak(utterA);
-        }, INTERVAL_TIME);
-    };
-    speechSynthesis.speak(utterQ);
-}
-
-function startTextFlow() {
-    charIndex = 0;
-    document.getElementById("question").innerText = "";
-    if (isAutoMode) startAutoFlow();
-    else if (isVoiceMode) startVoiceFlow();
-    else startVisualFlow();
-}
-
-function startVisualFlow() {
-    displayInterval = setInterval(() => {
-        if (charIndex >= currentQ.question.length) { stopDisplay(); return; }
-        document.getElementById("question").innerText += currentQ.question[charIndex];
-        charIndex++;
-    }, 100);
-}
-
-function startVoiceFlow() {
-    const cleaned = currentQ.question.replace(/[(\（].*?[)\）]/g, "");
-    currentUtterance = new SpeechSynthesisUtterance("問題。" + cleaned);
-    currentUtterance.lang = 'ja-JP';
-    currentUtterance.rate = SPEECH_RATE;
-    currentUtterance.onend = () => { if (document.getElementById("answerSection").style.display === "none") stopDisplay(); };
-    speechSynthesis.speak(currentUtterance);
+            },
+            () => { // 問題終了(待機中)
+                updatePauseBtnUI(false, "待機中...");
+            },
+            () => { // サイクル完了
+                if (isAutoMode && !isPaused) showNextQuestion();
+            }
+        );
+    } else if (isVoiceMode) {
+        AudioPlayer.play("問題。" + AudioPlayer.cleanText(currentQ.question), null, () => {
+            if (document.getElementById("answerSection").style.display === "none") stopDisplay();
+        });
+    } else {
+        displayInterval = setInterval(() => {
+            if (charIndex >= currentQ.question.length) { stopDisplay(); return; }
+            document.getElementById("question").innerText += currentQ.question[charIndex];
+            charIndex++;
+        }, 100);
+    }
 }
 
 function stopDisplay() {
     clearInterval(displayInterval);
-    speechSynthesis.cancel(); 
+    AudioPlayer.stop();
     document.getElementById("answerSection").style.display = "block";
     document.getElementById("buzzBtn").disabled = true;
     startCountdown();
@@ -242,7 +188,7 @@ function startCountdown() {
 function revealAnswer() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
-    speechSynthesis.cancel();
+    AudioPlayer.stop();
     document.getElementById("question").innerText = currentQ.question;
     document.getElementById("answerText").innerText = "答え: " + currentQ.answer;
     document.getElementById("answerSection").style.display = "block";
@@ -254,12 +200,12 @@ function revealAnswer() {
 function resetUI() {
     clearInterval(displayInterval);
     clearInterval(countdownInterval);
-    if (autoTimer) clearTimeout(autoTimer);
-    speechSynthesis.cancel();
+    AutoFlowManager.stop();
     document.getElementById("question").innerText = "";
     document.getElementById("answerText").innerText = "";
     document.getElementById("answerSection").style.display = "none";
     document.getElementById("judgeButtons").style.display = "none";
+    document.getElementById("showAnswerBtn").style.display = isAutoMode ? "none" : "inline-block";
 }
 
 function enableButtons() {
@@ -284,9 +230,9 @@ function initSearch() {
     });
 }
 
-document.getElementById("modeTextBtn").addEventListener("click", () => switchMode('text'));
-document.getElementById("modeVoiceBtn").addEventListener("click", () => switchMode('voice'));
-document.getElementById("modeAutoBtn").addEventListener("click", () => switchMode('auto'));
+document.getElementById("modeTextBtn").addEventListener("click", () => { Storage.saveMode('text'); applyMode('text'); isFirstQuestion = true; showNextQuestion(); });
+document.getElementById("modeVoiceBtn").addEventListener("click", () => { Storage.saveMode('voice'); applyMode('voice'); isFirstQuestion = true; showNextQuestion(); });
+document.getElementById("modeAutoBtn").addEventListener("click", () => { Storage.saveMode('auto'); applyMode('auto'); isFirstQuestion = true; showNextQuestion(); });
 document.getElementById("shuffleToggleBtn").addEventListener("click", () => {
     const current = Storage.getShuffleSetting();
     Storage.saveShuffleSetting(!current);

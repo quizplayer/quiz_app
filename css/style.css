@@ -1,11 +1,12 @@
-/* ===== 全体 ===== */
+/* ===== 全体・ヘッダー ===== */
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #f9f9f9;
+    color: #333;
+    overflow-x: hidden;
 }
 
-/* ===== ヘッダー固定 ===== */
 header {
     position: fixed;
     top: 0;
@@ -22,125 +23,175 @@ header {
     box-sizing: border-box;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 1.2em;
-    color: #333;
-}
-
-/* コンテンツエリア */
 .container {
     padding: 80px 15px 130px 15px;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-/* ===== 問題文エリア ===== */
-#question {
-    font-size: 1.4em;
-    min-height: 150px; /* ボタン配置のために少し広めに確保 */
-    margin: 20px 0;
-    line-height: 1.6;
-    text-align: left;
-    word-break: break-word;
-    white-space: pre-wrap;
-    display: flex;           /* 中央配置用 */
-    justify-content: center; /* 中央配置用 */
-    align-items: center;     /* 中央配置用 */
-}
-
-/* ===== 解答（右詰め） ===== */
-#answerText {
-    font-size: 1.6em;
-    font-weight: bold;
-    text-align: right;
-    color: #e91e63;
-    margin-top: 10px;
-}
-
-/* ===== ボタン共通 ===== */
-button {
-    padding: 16px;
-    font-size: 1.2em;
-    border-radius: 14px;
-    border: none;
-    cursor: pointer;
-}
-
-.smallBtn {
-    padding: 10px 16px;
-    font-size: 0.9em;
-    background: #2196F3;
-    color: white;
-    border-radius: 8px;
-    margin-right: 5px;
-}
-
-.subBtn {
-    background: #777;
-    color: white;
-    width: 100%;
-    margin-top: 10px;
-}
-
-/* ===== 判定ボタンエリア ===== */
-#judgeButtons {
+/* ===== サイドメニュー (ドロワー) ===== */
+.side-menu {
+    position: fixed;
+    top: 0;
+    right: -280px;
+    width: 280px;
+    height: 100%;
+    background: white;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    z-index: 2100;
+    transition: right 0.3s ease;
     display: flex;
     flex-direction: column;
+}
+
+.side-menu.open {
+    right: 0;
+}
+
+.side-menu-header {
+    padding: 15px;
+    background: #f8f8f8;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    margin-top: 15px;
-}
-
-.judgeBtn {
-    padding: 12px;
-    font-size: 1em;
-    border-radius: 10px;
     font-weight: bold;
+    border-bottom: 1px solid #ddd;
 }
 
-.correctBtn {
+.side-menu-body {
+    padding: 20px;
+}
+
+.mode-buttons-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    background-color: #4CAF50;
-    color: white;
-    margin-bottom: 8px;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 2000;
 }
 
-.retryBtn {
-    width: 48%;
+.menu-overlay.show {
+    display: block;
 }
 
-/* ===== 早押しボタン ===== */
-#buzzBtn {
-    background-color: orange;
-    color: white;
+hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+
+/* ===== クイズ・問題文 ===== */
+#question {
+    font-size: 1.3em;
+    min-height: 120px;
+    margin: 10px 0;
+    line-height: 1.6;
     font-weight: bold;
+    text-align: left; /* 左揃えに固定 */
 }
 
-button:disabled {
-    opacity: 0.4;
-    background-color: #ccc !important;
-    color: #666 !important;
-    cursor: not-allowed;
+/* ===== 答えのスタイル (左揃え) ===== */
+#answerText {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #4CAF50;
+    margin: 20px 0;
+    text-align: left; /* 中央揃えを解除 */
+    word-break: break-all;
 }
 
-/* ===== 下部固定パネル ===== */
+/* ===== カウントダウンのスタイル (ここだけは目立つように中央揃え) ===== */
+#countdown {
+    font-size: 3em;
+    font-weight: bold;
+    color: #f44336;
+    text-align: center; 
+    margin: 10px 0;
+}
+
+/* ===== コントロールパネル ===== */
 #controlPanel {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background: white;
-    padding: 10px;
-    box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+    background: #fff;
+    padding: 15px;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
     box-sizing: border-box;
+    z-index: 1000;
 }
 
-#controlPanel button { width: 45%; }
-
-#countdown {
-    font-size: 1.4em;
+#controlPanel button {
+    flex: 1;
+    margin: 0 5px;
+    padding: 16px;
+    font-size: 1.1em;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
     font-weight: bold;
-    color: #ff5722;
-    margin-top: 10px;
-    text-align: center;
 }
+
+/* ===== 各種ボタン ===== */
+.smallBtn {
+    padding: 10px 16px;
+    font-size: 0.9em;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.subBtn { 
+    background: #777; 
+    color: white; 
+    width: 100%; 
+    margin-top: 10px; 
+    border:none; 
+    padding:15px; 
+    border-radius:10px;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+#judgeButtons { 
+    display: flex; 
+    flex-direction: column; 
+    margin-top: 15px; 
+    width:100%; 
+}
+.judgeBtn { 
+    padding: 14px; 
+    font-size: 1.1em; 
+    border-radius: 10px; 
+    font-weight: bold; 
+    border:none; 
+    cursor:pointer;
+}
+.correctBtn { 
+    width: 100%; 
+    background-color: #4CAF50; 
+    color: white; 
+    margin-bottom: 12px; 
+}
+.retryBtn { 
+    width: 48%; 
+}
+
+#buzzBtn { background-color: #f44336; color: white; }
+#nextBtn { background-color: #2196F3; color: white; }
+.pauseBtn { background-color: #f0ad4e; color: white; }
