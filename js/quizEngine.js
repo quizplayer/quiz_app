@@ -1,8 +1,7 @@
 const QuizEngine = {
     questions: [],
-    totalCount: 0, // 追加：読み込み時の総問題数
+    totalCount: 0,
 
-    // セル内改行対応パース
     parseCSV(text) {
         const rows = [];
         let currentRow = [];
@@ -41,8 +40,19 @@ const QuizEngine = {
     init() {
         const all = Storage.loadAll();
         if (all.length > 0) {
-            this.questions = this.shuffle([...all]);
-            this.totalCount = this.questions.length; // 総数を保存
+            const isShuffle = Storage.getShuffleSetting();
+            let processedQuestions = [...all];
+
+            if (isShuffle) {
+                processedQuestions = this.shuffle(processedQuestions);
+            } else {
+                const startIndex = Storage.getStartIndex();
+                const startAt = Math.max(0, startIndex - 1);
+                processedQuestions = processedQuestions.slice(startAt);
+            }
+
+            this.questions = processedQuestions;
+            this.totalCount = all.length; 
             Storage.saveCurrentProgress(this.questions);
             return true;
         }
@@ -53,8 +63,8 @@ const QuizEngine = {
         return this.questions.length === 0 ? null : this.questions.shift();
     },
 
-    // 現在の進行度（何問解いたか）を計算して返す
     getCurrentNumber() {
+        // 全体の数から「残り」を引くことで、現在の絶対位置（1番目〜）を出す
         return this.totalCount - this.questions.length;
     },
 
