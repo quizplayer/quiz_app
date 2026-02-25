@@ -3,16 +3,15 @@ const Storage = {
         ALL: "all_questions",
         CURRENT: "quiz_questions",
         FILENAME: "quiz_filename",
-        MODE: "quiz_mode" // 追加
+        MODE: "quiz_mode",
+        SHUFFLE: "quiz_shuffle" // 追加
     },
 
-    // データの保存（読み込み時）
     saveAll(data) {
         localStorage.setItem(this.KEYS.ALL, JSON.stringify(data));
         localStorage.setItem(this.KEYS.CURRENT, JSON.stringify(data));
     },
 
-    // 進行状況の保存
     saveCurrentProgress(questions) {
         localStorage.setItem(this.KEYS.CURRENT, JSON.stringify(questions));
     },
@@ -29,12 +28,21 @@ const Storage = {
         return localStorage.getItem(this.KEYS.FILENAME) || "";
     },
 
-    // モード保存・取得用
     saveMode(mode) {
         localStorage.setItem(this.KEYS.MODE, mode);
     },
 
     getMode() {
-        return localStorage.getItem(this.KEYS.MODE) || "text"; // デフォルトは画面表示
+        return localStorage.getItem(this.KEYS.MODE) || "text";
+    },
+
+    // シャッフル設定の保存・取得
+    saveShuffle(isEnabled) {
+        localStorage.setItem(this.KEYS.SHUFFLE, isEnabled);
+    },
+
+    getShuffle() {
+        const val = localStorage.getItem(this.KEYS.SHUFFLE);
+        return val === null ? true : val === "true"; // デフォルトON
     }
 };
