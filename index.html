@@ -19,6 +19,11 @@
         </div>
         <div class="side-menu-body">
             <section>
+                <h4>復習設定</h4>
+                <button id="favModeToggleBtn" class="smallBtn" style="width:100%; margin-bottom:10px; background:#FF9800;">☆ 復習モード: OFF</button>
+            </section>
+            <hr>
+            <section>
                 <h4>出題モード</h4>
                 <div class="mode-buttons-vertical">
                     <button id="modeTextBtn" class="smallBtn">画面表示</button>
@@ -36,14 +41,11 @@
             </section>
             <hr>
             <section>
-                <h4>データ操作</h4>
+                <h4>データ</h4>
                 <button id="loadBtn" class="smallBtn" style="width:100%; margin-bottom:10px; background:#2196F3;">問題集読み込み</button>
-                <button id="resetBtn" class="smallBtn" style="width:100%; background:#f44336;">最初からリセット</button>
-            </section>
-            <hr>
-            <section>
-                <h4>ツール</h4>
-                <button id="openSearchBtn" class="smallBtn" style="width:100%; background:#555;">問題検索窓を開く</button>
+                <button id="resetBtn" class="smallBtn" style="width:100%; background:#f44336; margin-bottom:10px;">リセット</button>
+                <button id="openSearchBtn" class="smallBtn" style="width:100%; background:#555; margin-bottom:10px;">現在の問題を検索</button>
+                <button onclick="window.open('search.html', '_blank')" class="smallBtn" style="width:100%; background:#555;">検索専用ページ</button>
             </section>
         </div>
     </div>
@@ -54,7 +56,10 @@
         <div id="progressDisplay" style="font-size: 0.9em; font-weight: bold; color: #2196F3; margin-bottom: 20px;"></div>
         <input type="file" id="fileInput" accept=".csv" style="display:none;">
 
-        <h2 id="question"></h2>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <h2 id="question" style="flex: 1; margin-top: 0;"></h2>
+            <button id="favBtn" style="background:none; border:none; font-size: 2.2em; cursor:pointer; padding: 0; color: #ccc; line-height: 1;">☆</button>
+        </div>
 
         <div id="answerSection" style="display:none;">
             <p id="answerText"></p>

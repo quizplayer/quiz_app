@@ -1,6 +1,5 @@
 const AudioPlayer = {
     speechRate: 1.0,
-
     play(text, onStart, onEnd) {
         speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
@@ -10,24 +9,9 @@ const AudioPlayer = {
         if (onEnd) utter.onend = onEnd;
         speechSynthesis.speak(utter);
     },
-
-    stop() {
-        speechSynthesis.cancel();
-    },
-
-    pause() {
-        speechSynthesis.pause();
-    },
-
-    resume() {
-        speechSynthesis.resume();
-    },
-
-    isPaused() {
-        return speechSynthesis.paused;
-    },
-
-    cleanText(text) {
-        return text.replace(/[(\（].*?[)\）]/g, "");
-    }
+    stop() { speechSynthesis.cancel(); },
+    pause() { speechSynthesis.pause(); },
+    resume() { speechSynthesis.resume(); },
+    isPaused() { return speechSynthesis.paused; },
+    cleanText(text) { return text.replace(/[(\（].*?[)\）]/g, ""); }
 };

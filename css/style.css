@@ -1,4 +1,3 @@
-/* ===== 全体・ヘッダー ===== */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -29,7 +28,7 @@ header {
     margin: 0 auto;
 }
 
-/* ===== サイドメニュー (ドロワー) ===== */
+/* サイドメニュー */
 .side-menu {
     position: fixed;
     top: 0;
@@ -44,9 +43,7 @@ header {
     flex-direction: column;
 }
 
-.side-menu.open {
-    right: 0;
-}
+.side-menu.open { right: 0; }
 
 .side-menu-header {
     padding: 15px;
@@ -58,139 +55,57 @@ header {
     border-bottom: 1px solid #ddd;
 }
 
-.side-menu-body {
-    padding: 20px;
-}
-
-.mode-buttons-vertical {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+.side-menu-body { padding: 20px; overflow-y: auto; }
+.mode-buttons-vertical { display: flex; flex-direction: column; gap: 8px; }
 .menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: none;
-    z-index: 2000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none; z-index: 2000;
 }
+.menu-overlay.show { display: block; }
+hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
 
-.menu-overlay.show {
-    display: block;
-}
-
-hr {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 20px 0;
-}
-
-/* ===== クイズ・問題文 ===== */
+/* 問題・回答・カウント */
 #question {
-    font-size: 1.3em;
-    min-height: 120px;
-    margin: 10px 0;
-    line-height: 1.6;
-    font-weight: bold;
-    text-align: left; /* 左揃えに固定 */
+    font-size: 1.3em; min-height: 120px; margin: 10px 0;
+    line-height: 1.6; font-weight: bold; text-align: left;
 }
 
-/* ===== 答えのスタイル (左揃え) ===== */
 #answerText {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: #4CAF50;
-    margin: 20px 0;
-    text-align: left; /* 中央揃えを解除 */
-    word-break: break-all;
+    font-size: 1.8em; font-weight: bold; color: #4CAF50;
+    margin: 20px 0; text-align: left; word-break: break-all;
 }
 
-/* ===== カウントダウンのスタイル (ここだけは目立つように中央揃え) ===== */
 #countdown {
-    font-size: 3em;
-    font-weight: bold;
-    color: #f44336;
-    text-align: center; 
-    margin: 10px 0;
+    font-size: 3em; font-weight: bold; color: #f44336;
+    text-align: center; margin: 10px 0;
 }
 
-/* ===== コントロールパネル ===== */
+/* パネル・ボタン */
 #controlPanel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #fff;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    box-sizing: border-box;
-    z-index: 1000;
+    position: fixed; bottom: 0; left: 0; width: 100%; background: #fff;
+    padding: 15px; display: flex; justify-content: space-between;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1); box-sizing: border-box; z-index: 1000;
 }
 
 #controlPanel button {
-    flex: 1;
-    margin: 0 5px;
-    padding: 16px;
-    font-size: 1.1em;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
+    flex: 1; margin: 0 5px; padding: 16px; font-size: 1.1em;
+    border-radius: 12px; border: none; cursor: pointer; font-weight: bold;
 }
 
-/* ===== 各種ボタン ===== */
 .smallBtn {
-    padding: 10px 16px;
-    font-size: 0.9em;
-    background: #2196F3;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
+    padding: 10px 16px; font-size: 0.9em; background: #2196F3;
+    color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
 }
 
-.subBtn { 
-    background: #777; 
-    color: white; 
-    width: 100%; 
-    margin-top: 10px; 
-    border:none; 
-    padding:15px; 
-    border-radius:10px;
-    font-size: 1.1em;
-    font-weight: bold;
+.subBtn {
+    background: #777; color: white; width: 100%; margin-top: 10px;
+    border:none; padding:15px; border-radius:10px; font-size: 1.1em; font-weight: bold;
 }
 
-#judgeButtons { 
-    display: flex; 
-    flex-direction: column; 
-    margin-top: 15px; 
-    width:100%; 
-}
-.judgeBtn { 
-    padding: 14px; 
-    font-size: 1.1em; 
-    border-radius: 10px; 
-    font-weight: bold; 
-    border:none; 
-    cursor:pointer;
-}
-.correctBtn { 
-    width: 100%; 
-    background-color: #4CAF50; 
-    color: white; 
-    margin-bottom: 12px; 
-}
-.retryBtn { 
-    width: 48%; 
-}
+#judgeButtons { display: flex; flex-direction: column; margin-top: 15px; width:100%; }
+.judgeBtn { padding: 14px; font-size: 1.1em; border-radius: 10px; font-weight: bold; border:none; cursor:pointer; }
+.correctBtn { width: 100%; background-color: #4CAF50; color: white; margin-bottom: 12px; }
+.retryBtn { width: 48%; }
 
 #buzzBtn { background-color: #f44336; color: white; }
 #nextBtn { background-color: #2196F3; color: white; }
