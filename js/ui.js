@@ -80,6 +80,7 @@ function toggleFavMode() {
     const current = Storage.getFavOnlyMode();
     Storage.saveFavOnlyMode(!current);
     updateFavModeUI();
+    updateShuffleBtnUI();
     if (confirm("出題範囲を変更しました。最初からやり直しますか？")) {
         if (QuizEngine.init()) { isFirstQuestion = true; showNextQuestion(); }
     }
@@ -91,16 +92,25 @@ function showNextQuestion() {
     
     const isFavOnly = Storage.getFavOnlyMode();
     const isShuffle = Storage.getShuffleSetting();
+    const offset = Storage.getStartIndex() - 1;
+    
     let currentNum;
     let total;
 
-    if (isFavOnly || isShuffle) {
+    if (isShuffle) {
+        // シャッフル時は「今何問目か / 今回の全問題数」を表示
         currentNum = QuizEngine.getCurrentNumber() + 1;
         total = QuizEngine.totalCount;
-    } else {
-        const offset = Storage.getStartIndex() - 1;
+    } else if (isFavOnly) {
+        // 復習モード時は「お気に入りの中の何問目か / 全お気に入り数」を表示
+        const totalFavs = Storage.getFavorites().length;
         currentNum = (QuizEngine.totalCount - QuizEngine.questions.length) + 1 + offset;
-        total = Storage.loadAll().length; 
+        total = totalFavs;
+    } else {
+        // 通常モード時は「全問題の中の何問目か / 全問題数」を表示
+        const allQuestions = Storage.loadAll().length;
+        currentNum = (QuizEngine.totalCount - QuizEngine.questions.length) + 1 + offset;
+        total = allQuestions;
     }
     
     if (QuizEngine.questions.length >= 0) {
@@ -213,8 +223,10 @@ function updateShuffleBtnUI() {
     const startInput = document.getElementById("startIndexInput");
     btn.innerText = isShuffle ? "シャッフル: ON" : "シャッフル: OFF";
     btn.style.backgroundColor = isShuffle ? "#9C27B0" : "#607D8B";
-    startInput.disabled = isShuffle;
-    document.getElementById("startIndexContainer").style.opacity = isShuffle ? "0.5" : "1";
+    
+    const canInputStart = !isShuffle;
+    startInput.disabled = !canInputStart;
+    document.getElementById("startIndexContainer").style.opacity = canInputStart ? "1" : "0.5";
 }
 
 function applyMode(mode) {

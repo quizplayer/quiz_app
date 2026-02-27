@@ -38,16 +38,21 @@ const QuizEngine = {
             const favorites = Storage.getFavorites();
 
             let processed = [...all];
+
+            // 1. お気に入りモードならフィルタリングを実行
             if (isFavOnly) {
                 processed = processed.filter(q => favorites.includes(q.question));
             }
 
+            // 2. シャッフル設定なら配列を混ぜる
             if (isShuffle) {
                 processed = this.shuffle(processed);
-            } else if (!isFavOnly) {
-                const start = Math.max(0, Storage.getStartIndex() - 1);
-                processed = processed.slice(start);
-            }
+            } 
+
+            // 3. 開始位置（StartIndex）を適用
+            // 復習モードON、かつシャッフルOFFの場合でも開始位置が機能するように修正
+            const start = Math.max(0, Storage.getStartIndex() - 1);
+            processed = processed.slice(start);
 
             this.questions = processed;
             this.totalCount = processed.length;
